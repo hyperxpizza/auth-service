@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+
+option go_package = "github.com/hyperxpizza/auth-service/pkg/grpc";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+
+message TokenData {
+    string username = 1;
+    string email = 2;
+    int64 id = 3;
+}
+
+message Token {
+    string token = 1;
+}
+
+service AuthService {
+    rpc GenerateToken(TokenData) returns (Token) {};
+    rpc ValidateToken(Token) returns (TokenData) {};
+}
