@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "github.com/hyperxpizza/auth-service/pkg/grpc";
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
+//import "google/protobuf/empty.proto";
 
 message TokenData {
     string username = 1;
@@ -13,6 +13,14 @@ message TokenData {
 
 message Token {
     string token = 1;
+}
+
+message User {
+    int64 id = 1;
+    string username = 2;
+    string passwordHash = 3;
+    google.protobuf.Timestamp created = 4;
+    google.protobuf.Timestamp updated = 5;
 }
 
 service AuthService {
