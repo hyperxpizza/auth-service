@@ -39,3 +39,7 @@ func (db *Database) DelteUser() error {
 func (db *Database) UpdateUser() error {
 	return nil
 }
+
+func (db *Database) GetUser(id int64) {
+
+}
