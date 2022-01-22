@@ -27,6 +27,7 @@ func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*Auth
 }
 
 func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData) (*pb.Token, error) {
+	a.logger.Infof("generating token for: %s", data.Username)
 	var tokenResponse pb.Token
 
 	return &tokenResponse, nil

@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "github.com/hyperxpizza/auth-service/pkg/grpc";
 
 import "google/protobuf/timestamp.proto";
-//import "google/protobuf/empty.proto";
+import "google/protobuf/empty.proto";
 
 message TokenData {
     string username = 1;
@@ -23,7 +23,15 @@ message User {
     google.protobuf.Timestamp updated = 5;
 }
 
+message ID {
+    int64 id = 1;
+}
+
 service AuthService {
     rpc GenerateToken(TokenData) returns (Token) {};
     rpc ValidateToken(Token) returns (TokenData) {};
+
+    rpc AddUser(User) returns (ID) {};
+    rpc RemoveUser(ID) returns (google.protobuf.Empty) {};
+    rpc UpdateUser(User) returns (google.protobuf.Empty) {};
 }
