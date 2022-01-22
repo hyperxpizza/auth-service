@@ -3,6 +3,7 @@ package impl
 import (
 	"context"
 
+	"github.com/hyperxpizza/auth-service/pkg/auth"
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
 	"github.com/sirupsen/logrus"
@@ -30,6 +31,13 @@ func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*Auth
 func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData) (*pb.Token, error) {
 	a.logger.Infof("generating token for: %s", data.Username)
 	var tokenResponse pb.Token
+
+	token, err := auth.GenerateToken(data.Id, a.cfg.AuthService.ExpirationTimeHours, data.Username, a.cfg.AuthService.Issuer, a.cfg.AuthService.Issuer, a.cfg.AuthService.JWTSecret)
+	if err != nil {
+		a.logger.Warnf("generating jwt token for: %s with id: %d failed: %s", data.Username, data.Id, err.Error())
+	}
+
+	tokenResponse.Token = token
 
 	return &tokenResponse, nil
 }
