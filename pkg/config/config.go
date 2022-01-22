@@ -7,6 +7,19 @@ import (
 )
 
 type Config struct {
+	Database struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
+		Port     int    `json:"port"`
+		Name     string `json:"name"`
+		Host     string `json:"host"`
+	} `json:"database"`
+	AuthService struct {
+		JWTSecret           string `json:"jwtSecret"`
+		Issuer              string `json:"issuer"`
+		ExpirationTimeHours int64  `json:"expirationTimeHours"`
+		Audience            string `json:"audience"`
+	} `json:"authService"`
 }
 
 func NewConfig(pathToFile string) (*Config, error) {
