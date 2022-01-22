@@ -28,5 +28,8 @@ func NewConfig(pathToFile string) (*Config, error) {
 	}
 
 	return &c, nil
+}
+
+func (c *Config) PrettyPrint() {
 
 }

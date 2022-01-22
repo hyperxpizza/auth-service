@@ -9,9 +9,21 @@ import (
 )
 
 type AuthServiceServer struct {
-	cfg    config.Config
+	cfg    *config.Config
 	logger logrus.FieldLogger
 	pb.UnimplementedAuthServiceServer
+}
+
+func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*AuthServiceServer, error) {
+	cfg, err := config.NewConfig(pathToConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthServiceServer{
+		cfg:    cfg,
+		logger: logger,
+	}, nil
 }
 
 func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData) (*pb.Token, error) {
