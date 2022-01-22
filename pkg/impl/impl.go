@@ -6,6 +6,7 @@ import (
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type AuthServiceServer struct {
@@ -37,4 +38,18 @@ func (a AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (
 	var tokenData pb.TokenData
 
 	return &tokenData, nil
+}
+
+func (a AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, error) {
+	var id pb.ID
+
+	return &id, nil
+}
+
+func (a AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (emptypb.Empty, error) {
+	return emptypb.Empty{}, nil
+}
+
+func (a AuthServiceServer) UpdateUser(ctx context.Context, user *pb.User) (emptypb.Empty, error) {
+	return emptypb.Empty{}, nil
 }
