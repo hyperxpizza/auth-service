@@ -13,7 +13,7 @@ type Database struct {
 }
 
 func Connect(cfg *config.Config) (*Database, error) {
-	psqlInfo := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", c.Database.User, c.Database.Password, c.Database.Host, c.Database.Port, c.Database.Name)
+	psqlInfo := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", cfg.Database.User, cfg.Database.Password, cfg.Database.Host, cfg.Database.Port, cfg.Database.Name)
 
 	database, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
