@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//go test -v ./tests/ --run TestJWTToken --id=1 --username=hyperxpizza --config=/home/hyperxpizza/dev/golang/auth-service/config.json
 func TestJWTToken(t *testing.T) {
 	validateFlags := func() error {
 		if *idOpt == 0 {

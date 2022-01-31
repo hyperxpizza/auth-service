@@ -1,4 +1,15 @@
 {
-    "database": {},
-    "authService": {}
+    "database": {
+        "user": "authServiceDBuser",
+        "password": "authServiceDBpassword",
+        "port": 5432,
+        "name": "authServiceDB",
+        "host": "postgres"
+    },
+    "authService": {
+        "jwtSecret": "secretJwtKey",
+        "issuer": "authService",
+        "expirationTimeHours": 24,
+        "audience": "audience"
+    }
 }
