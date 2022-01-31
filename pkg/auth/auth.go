@@ -61,8 +61,9 @@ func (a *Authenticator) ValidateToken(tokenString string) (string, int64, error)
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		id := claims["id"]
+		idFloat := id.(float64)
 		username := claims["username"]
-		return username.(string), id.(int64), nil
+		return username.(string), int64(idFloat), nil
 	}
 
 	return "", 0, err
