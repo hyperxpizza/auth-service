@@ -52,9 +52,16 @@ func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData
 	_, err := a.db.GetUser(data.Id, data.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			a.logger.Warnf("user with id: %d and username: %s was not found in the database", data.Id, data.Username)
 			return nil, status.Error(
 				codes.NotFound,
 				"User not found in the database",
+			)
+		} else {
+			a.logger.Warnf("database GetUser function returned an error: %s", err.Error())
+			return nil, status.Error(
+				codes.Internal,
+				err.Error(),
 			)
 		}
 	}
