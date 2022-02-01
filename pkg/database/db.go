@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hyperxpizza/auth-service/pkg/config"
+	"github.com/hyperxpizza/auth-service/pkg/models"
 	_ "github.com/lib/pq"
 )
 
@@ -40,6 +41,18 @@ func (db *Database) UpdateUser() error {
 	return nil
 }
 
-func (db *Database) GetUser(id int64) {
+func (db *Database) GetUser(id int64, username string) (*models.User, error) {
+	var user models.User
+	err := db.QueryRow(`select * from users where id = $1 and username = $2`, id, username).Scan(
+		&user.ID,
+		&user.Username,
+		&user.PasswordHash,
+		&user.Created,
+		&user.Updated,
+	)
+	if err != nil {
+		return nil, err
+	}
 
+	return &user, nil
 }
