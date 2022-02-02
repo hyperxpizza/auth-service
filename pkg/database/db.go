@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/models"
@@ -29,8 +30,19 @@ func Connect(cfg *config.Config) (*Database, error) {
 	return &Database{database}, nil
 }
 
-func (db *Database) InsertUser() error {
-	return nil
+func (db *Database) InsertUser(user models.User) (int64, error) {
+	var id int64
+	stmt, err := db.Prepare(`insert into users (id, username, email, passwordHash, created, updated) values (default, $1, $2, $3, $4) returning id`)
+	if err != nil {
+		return 0, err
+	}
+
+	err = stmt.QueryRow(user.Username, user.PasswordHash, time.Now(), time.Now()).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
 
 func (db *Database) DelteUser() error {
