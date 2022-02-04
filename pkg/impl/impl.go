@@ -9,10 +9,15 @@ import (
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/database"
 	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
+	"github.com/hyperxpizza/auth-service/pkg/validator"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+)
+
+const (
+	UserNotFoundError = "User not found in the database"
 )
 
 type AuthServiceServer struct {
@@ -55,7 +60,7 @@ func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData
 			a.logger.Warnf("user with id: %d and username: %s was not found in the database", data.Id, data.Username)
 			return nil, status.Error(
 				codes.NotFound,
-				"User not found in the database",
+				UserNotFoundError,
 			)
 		} else {
 			a.logger.Warnf("database GetUser function returned an error: %s", err.Error())
@@ -101,13 +106,46 @@ func (a AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (
 func (a AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, error) {
 	var id pb.ID
 
+	unmappedUser := unMapUser(user)
+	err := validator.ValidateUser(unmappedUser)
+	if err != nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			err.Error(),
+		)
+	}
+
+	idInt, err := a.db.InsertUser(unmappedUser)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	id.Id = idInt
+
 	return &id, nil
 }
 
-func (a AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (emptypb.Empty, error) {
-	return emptypb.Empty{}, nil
+func (a AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb.Empty, error) {
+	err := a.db.DelteUser(id.Id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Error(
+				codes.NotFound,
+				UserNotFoundError,
+			)
+		} else {
+			return nil, status.Error(
+				codes.Internal,
+				err.Error(),
+			)
+		}
+	}
+	return &emptypb.Empty{}, nil
 }
 
-func (a AuthServiceServer) UpdateUser(ctx context.Context, user *pb.User) (emptypb.Empty, error) {
-	return emptypb.Empty{}, nil
+func (a AuthServiceServer) UpdateUser(ctx context.Context, user *pb.User) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
 }

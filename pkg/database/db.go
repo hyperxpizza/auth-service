@@ -45,11 +45,21 @@ func (db *Database) InsertUser(user models.User) (int64, error) {
 	return id, nil
 }
 
-func (db *Database) DelteUser() error {
+func (db *Database) DeleteUser(id int64) error {
+	stmt, err := db.Prepare(`delete from users where id = $1`)
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (db *Database) UpdateUser() error {
+func (db *Database) UpdateUser(user models.User) error {
 	return nil
 }
 

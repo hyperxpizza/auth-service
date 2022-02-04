@@ -6,7 +6,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func UnMapUser(user *pb.User) models.User {
+func unMapUser(user *pb.User) models.User {
 	return models.User{
 		ID:           user.Id,
 		Username:     user.Username,
@@ -16,7 +16,7 @@ func UnMapUser(user *pb.User) models.User {
 	}
 }
 
-func MapUser(user models.User) *pb.User {
+func mapUser(user models.User) *pb.User {
 	return &pb.User{
 		Id:           user.ID,
 		Username:     user.Username,
