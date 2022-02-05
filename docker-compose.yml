@@ -8,5 +8,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - data:/var/lib/postgresql/data
+    restart: always
+    ports: 
+      - '5432:5432'
 volumes:
   data:

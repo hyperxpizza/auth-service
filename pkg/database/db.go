@@ -32,7 +32,7 @@ func Connect(cfg *config.Config) (*Database, error) {
 
 func (db *Database) InsertUser(user models.User) (int64, error) {
 	var id int64
-	stmt, err := db.Prepare(`insert into users (id, username, email, passwordHash, created, updated) values (default, $1, $2, $3, $4) returning id`)
+	stmt, err := db.Prepare(`insert into users (id, username, passwordHash, created, updated) values (default, $1, $2, $3, $4) returning id`)
 	if err != nil {
 		return 0, err
 	}
