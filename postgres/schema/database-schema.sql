@@ -1,4 +1,4 @@
-drop table users if exists;
+-- drop table if exists users;
 create table users (
     id serial primary key,
     username varchar(100) unique not null,

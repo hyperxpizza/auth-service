@@ -1,0 +1,1 @@
+docker-compose exec postgres psql -d authServiceDB -U authServiceDBuser
