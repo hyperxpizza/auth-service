@@ -106,9 +106,12 @@ func (a AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (
 func (a AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, error) {
 	var id pb.ID
 
+	a.logger.Infof("adding user: %s into the database", user.Username)
+
 	unmappedUser := unMapUser(user)
 	err := validator.ValidateUser(unmappedUser)
 	if err != nil {
+		a.logger.Warnf("user: %s is not valid: %s", user.Username, err.Error())
 		return nil, status.Error(
 			codes.InvalidArgument,
 			err.Error(),
@@ -117,6 +120,7 @@ func (a AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, 
 
 	idInt, err := a.db.InsertUser(unmappedUser)
 	if err != nil {
+		a.logger.Warnf("inserting user: %s into the database failed: %s", user.Username, err.Error())
 		return nil, status.Error(
 			codes.Internal,
 			err.Error(),
@@ -125,24 +129,34 @@ func (a AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, 
 
 	id.Id = idInt
 
+	a.logger.Infof("user: %s id: %d has been successfully inserted into the database", user.Username, idInt)
+
 	return &id, nil
 }
 
 func (a AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb.Empty, error) {
-	err := a.db.DelteUser(id.Id)
+
+	a.logger.Infof("deleting user with id: %d", id.Id)
+
+	err := a.db.DeleteUser(id.Id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			a.logger.Warnf("user with id: %d was not found in the database", id.Id)
 			return nil, status.Error(
 				codes.NotFound,
 				UserNotFoundError,
 			)
 		} else {
+			a.logger.Warnf("deleting user with id: %d has failed: %s", id.Id, err.Error())
 			return nil, status.Error(
 				codes.Internal,
 				err.Error(),
 			)
 		}
 	}
+
+	a.logger.Infof("deleted user with id: %d", id.Id)
+
 	return &emptypb.Empty{}, nil
 }
 

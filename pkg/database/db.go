@@ -60,6 +60,16 @@ func (db *Database) DeleteUser(id int64) error {
 }
 
 func (db *Database) UpdateUser(user models.User) error {
+	stmt, err := db.Prepare(`update users set username=$1, passwordHash=$2, updated=$3 where id=$4`)
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(user.Username, user.PasswordHash, time.Now(), user.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

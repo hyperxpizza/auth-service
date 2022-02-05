@@ -14,7 +14,7 @@ message Token {
     string token = 1;
 }
 
-message User {
+message AuthServiceUser {
     int64 id = 1;
     string username = 2;
     string passwordHash = 3;
@@ -30,7 +30,7 @@ service AuthService {
     rpc GenerateToken(TokenData) returns (Token) {};
     rpc ValidateToken(Token) returns (TokenData) {};
 
-    rpc AddUser(User) returns (ID) {};
+    rpc AddUser(AuthServiceUser) returns (ID) {};
     rpc RemoveUser(ID) returns (google.protobuf.Empty) {};
-    rpc UpdateUser(User) returns (google.protobuf.Empty) {};
+    rpc UpdateUser(AuthServiceUser) returns (google.protobuf.Empty) {};
 }
