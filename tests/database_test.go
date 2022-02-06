@@ -22,6 +22,8 @@ func sampleUser() models.User {
 			panic(err)
 		}
 
+		fmt.Println(string(hashedPassword))
+
 		return string(hashedPassword)
 	}
 

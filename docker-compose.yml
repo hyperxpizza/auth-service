@@ -11,5 +11,10 @@ services:
     restart: always
     ports: 
       - '5432:5432'
+  authService:
+    build: 
+      dockerfile: Dockerfile
+      context: .
+      target: dev
 volumes:
   data:
