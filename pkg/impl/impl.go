@@ -63,6 +63,7 @@ func (a AuthServiceServer) Run() {
 	}
 
 	a.logger.Infof("auth service server running on %s:%d", a.cfg.AuthService.Host, a.cfg.AuthService.Port)
+
 	if err := grpcServer.Serve(lis); err != nil {
 		a.logger.Fatalf("failed to serve: %s", err.Error())
 	}

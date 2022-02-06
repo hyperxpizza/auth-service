@@ -11,10 +11,18 @@ services:
     restart: always
     ports: 
       - '5432:5432'
-  authService:
+    networks:
+      - default
+  authservice:
     build: 
       dockerfile: Dockerfile
       context: .
-      target: dev
+    depends_on:
+      - postgres
+    #restart: always
+    ports: 
+      - "8886:8886"
+    networks:
+      - default
 volumes:
   data:
