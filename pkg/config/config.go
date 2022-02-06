@@ -19,6 +19,8 @@ type Config struct {
 		Issuer              string `json:"issuer"`
 		ExpirationTimeHours int64  `json:"expirationTimeHours"`
 		Audience            string `json:"audience"`
+		Host                string `json:"host"`
+		Port                int64  `json:"port"`
 	} `json:"authService"`
 }
 
