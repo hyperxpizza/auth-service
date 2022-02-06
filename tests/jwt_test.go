@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"testing"
 
 	"github.com/hyperxpizza/auth-service/pkg/auth"
@@ -11,6 +12,8 @@ import (
 
 //go test -v ./tests/ --run TestJWTToken --id=1 --username=hyperxpizza --config=/home/hyperxpizza/dev/golang/auth-service/config.json
 func TestJWTToken(t *testing.T) {
+	flag.Parse()
+
 	validateFlags := func() error {
 		if *idOpt == 0 {
 			return errors.New("ID flag not set")

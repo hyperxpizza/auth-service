@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"testing"
 	"time"
@@ -49,6 +50,8 @@ func newDB(cfgpath string) (*database.Database, error) {
 
 //go test -v ./tests --run TestInsertUser --config=/home/hyperxpizza/dev/golang/auth-service/config.json --delete=true
 func TestInsertUser(t *testing.T) {
+	flag.Parse()
+
 	validateFlags := func() error {
 		if *configPathOpt == "" {
 			return errors.New("config path not set")
@@ -70,7 +73,7 @@ func TestInsertUser(t *testing.T) {
 
 	fmt.Printf("inserted id: %d\n", id)
 
-	if *delete {
+	if *deleteOpt {
 		err = db.DeleteUser(id)
 		assert.NoError(t, err)
 		fmt.Printf("user with id: %d deleted", id)
@@ -80,6 +83,7 @@ func TestInsertUser(t *testing.T) {
 
 //go test -v ./tests --run TestGetUser --config=/home/hyperxpizza/dev/golang/auth-service/config.json --delete=true
 func TestGetUser(t *testing.T) {
+	flag.Parse()
 
 	validateFlags := func() error {
 		if *configPathOpt == "" {
@@ -109,7 +113,7 @@ func TestGetUser(t *testing.T) {
 
 	assert.Equal(t, user.Username, user2.Username)
 
-	if *delete {
+	if *deleteOpt {
 		err = db.DeleteUser(id)
 		assert.NoError(t, err)
 		fmt.Printf("user with id: %d deleted", id)
@@ -119,6 +123,8 @@ func TestGetUser(t *testing.T) {
 
 //go test -v ./tests --run TestUpdateUser --config=/home/hyperxpizza/dev/golang/auth-service/config.json --delete=true
 func TestUpdateUser(t *testing.T) {
+	flag.Parse()
+
 	validateFlags := func() error {
 		if *configPathOpt == "" {
 			return errors.New("config path not set")
@@ -153,7 +159,7 @@ func TestUpdateUser(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, user2.Username, user3.Username)
 
-	if *delete {
+	if *deleteOpt {
 		err = db.DeleteUser(id)
 		assert.NoError(t, err)
 		fmt.Printf("user with id: %d deleted", id)

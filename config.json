@@ -10,6 +10,7 @@
         "jwtSecret": "secretJwtKey",
         "issuer": "authService",
         "expirationTimeHours": 24,
-        "audience": "audience"
+        "audience": "audience",
+        "certPath": ""
     }
 }
