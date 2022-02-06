@@ -11,6 +11,8 @@
         "issuer": "authService",
         "expirationTimeHours": 24,
         "audience": "audience",
-        "certPath": ""
+        "certPath": "",
+        "host": "localhost",
+        "port": 8886
     }
 }

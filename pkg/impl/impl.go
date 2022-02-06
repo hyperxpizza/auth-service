@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"net"
 
 	"github.com/hyperxpizza/auth-service/pkg/auth"
 	"github.com/hyperxpizza/auth-service/pkg/config"
@@ -11,6 +13,7 @@ import (
 	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
 	"github.com/hyperxpizza/auth-service/pkg/validator"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -47,6 +50,22 @@ func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*Auth
 		db:            db,
 		authenticator: authenticator,
 	}, nil
+}
+
+func (a AuthServiceServer) Run() {
+	grpcServer := grpc.NewServer()
+	pb.RegisterAuthServiceServer(grpcServer, a)
+
+	addr := fmt.Sprintf(":%d", a.cfg.AuthService.Port)
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		a.logger.Fatalf("net.Listen failed: %s", err.Error())
+	}
+
+	a.logger.Infof("auth service server running on %s:%d", a.cfg.AuthService.Host, a.cfg.AuthService.Port)
+	if err := grpcServer.Serve(lis); err != nil {
+		a.logger.Fatalf("failed to serve: %s", err.Error())
+	}
 }
 
 func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData) (*pb.Token, error) {
