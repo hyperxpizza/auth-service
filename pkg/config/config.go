@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -46,5 +47,6 @@ func NewConfig(pathToFile string) (*Config, error) {
 }
 
 func (c *Config) PrettyPrint() {
-
+	data, _ := json.MarshalIndent(c, "", " ")
+	fmt.Println(string(data))
 }

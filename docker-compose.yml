@@ -24,5 +24,11 @@ services:
       - "8886:8886"
     networks:
       - default
+  #nginx:
+  #  build: ./nginx
+  #  ports:
+  #    - "80:80"
+  #  depends_on:
+  #    - authservice
 volumes:
   data:
