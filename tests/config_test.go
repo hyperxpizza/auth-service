@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"testing"
 
 	"github.com/hyperxpizza/auth-service/pkg/config"
@@ -8,6 +9,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
+	flag.Parse()
 	if *configPathOpt == "" {
 		t.Fail()
 		return
