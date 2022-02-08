@@ -82,13 +82,13 @@ func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData
 				codes.NotFound,
 				UserNotFoundError,
 			)
-		} else {
-			a.logger.Infof("database GetUser function returned an error: %s", err.Error())
-			return nil, status.Error(
-				codes.Internal,
-				err.Error(),
-			)
 		}
+		a.logger.Infof("database GetUser function returned an error: %s", err.Error())
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+
 	}
 
 	token, err := a.authenticator.GenerateToken(data.Id, data.Username)
@@ -166,13 +166,13 @@ func (a AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb.
 				codes.NotFound,
 				UserNotFoundError,
 			)
-		} else {
-			a.logger.Infof("deleting user with id: %d has failed: %s", id.Id, err.Error())
-			return nil, status.Error(
-				codes.Internal,
-				err.Error(),
-			)
 		}
+		a.logger.Infof("deleting user with id: %d has failed: %s", id.Id, err.Error())
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+
 	}
 
 	a.logger.Infof("deleted user with id: %d", id.Id)
@@ -182,6 +182,25 @@ func (a AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb.
 
 func (a AuthServiceServer) UpdateUser(ctx context.Context, user *pb.User) (*emptypb.Empty, error) {
 	a.logger.Infof("updating user with id: %d", user.Id)
+
+	mapppedUser := unMapUser(user)
+
+	err := a.db.UpdateUser(mapppedUser)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			a.logger.Infof("user with id: %d was not found in the database", user.Id)
+			return nil, status.Error(
+				codes.NotFound,
+				err.Error(),
+			)
+		}
+
+		a.logger.Infof("updating user with id: %d failed: %s", user.Id, err.Error())
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
 
 	return &emptypb.Empty{}, nil
 }
