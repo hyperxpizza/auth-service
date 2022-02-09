@@ -52,7 +52,7 @@ func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*Auth
 	}, nil
 }
 
-func (a AuthServiceServer) Run() {
+func (a *AuthServiceServer) Run() {
 	grpcServer := grpc.NewServer()
 	pb.RegisterAuthServiceServer(grpcServer, a)
 
@@ -69,7 +69,7 @@ func (a AuthServiceServer) Run() {
 	}
 }
 
-func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData) (*pb.Token, error) {
+func (a *AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData) (*pb.Token, error) {
 	a.logger.Infof("generating token for: %s", data.Username)
 	var tokenResponse pb.Token
 
@@ -105,7 +105,7 @@ func (a AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData
 	return &tokenResponse, nil
 }
 
-func (a AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (*pb.TokenData, error) {
+func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (*pb.TokenData, error) {
 	var tokenData pb.TokenData
 
 	username, id, err := a.authenticator.ValidateToken(token.Token)
@@ -123,7 +123,7 @@ func (a AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (
 	return &tokenData, nil
 }
 
-func (a AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, error) {
+func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, error) {
 	var id pb.ID
 
 	a.logger.Infof("adding user: %s into the database", user.Username)
@@ -154,7 +154,7 @@ func (a AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, 
 	return &id, nil
 }
 
-func (a AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb.Empty, error) {
+func (a *AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb.Empty, error) {
 
 	a.logger.Infof("deleting user with id: %d", id.Id)
 
@@ -180,7 +180,7 @@ func (a AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb.
 	return &emptypb.Empty{}, nil
 }
 
-func (a AuthServiceServer) UpdateUser(ctx context.Context, user *pb.User) (*emptypb.Empty, error) {
+func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.User) (*emptypb.Empty, error) {
 	a.logger.Infof("updating user with id: %d", user.Id)
 
 	mapppedUser := unMapUser(user)
