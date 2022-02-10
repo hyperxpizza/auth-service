@@ -21,9 +21,9 @@ const _ = grpc.SupportPackageIsVersion7
 type AuthServiceClient interface {
 	GenerateToken(ctx context.Context, in *TokenData, opts ...grpc.CallOption) (*Token, error)
 	ValidateToken(ctx context.Context, in *Token, opts ...grpc.CallOption) (*TokenData, error)
-	AddUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*ID, error)
+	AddUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*ID, error)
 	RemoveUser(ctx context.Context, in *ID, opts ...grpc.CallOption) (*empty.Empty, error)
-	UpdateUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*empty.Empty, error)
+	UpdateUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type authServiceClient struct {
@@ -52,7 +52,7 @@ func (c *authServiceClient) ValidateToken(ctx context.Context, in *Token, opts .
 	return out, nil
 }
 
-func (c *authServiceClient) AddUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*ID, error) {
+func (c *authServiceClient) AddUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*ID, error) {
 	out := new(ID)
 	err := c.cc.Invoke(ctx, "/AuthService/AddUser", in, out, opts...)
 	if err != nil {
@@ -70,7 +70,7 @@ func (c *authServiceClient) RemoveUser(ctx context.Context, in *ID, opts ...grpc
 	return out, nil
 }
 
-func (c *authServiceClient) UpdateUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *authServiceClient) UpdateUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/AuthService/UpdateUser", in, out, opts...)
 	if err != nil {
@@ -85,9 +85,9 @@ func (c *authServiceClient) UpdateUser(ctx context.Context, in *User, opts ...gr
 type AuthServiceServer interface {
 	GenerateToken(context.Context, *TokenData) (*Token, error)
 	ValidateToken(context.Context, *Token) (*TokenData, error)
-	AddUser(context.Context, *User) (*ID, error)
+	AddUser(context.Context, *AuthServiceUser) (*ID, error)
 	RemoveUser(context.Context, *ID) (*empty.Empty, error)
-	UpdateUser(context.Context, *User) (*empty.Empty, error)
+	UpdateUser(context.Context, *AuthServiceUser) (*empty.Empty, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -101,13 +101,13 @@ func (UnimplementedAuthServiceServer) GenerateToken(context.Context, *TokenData)
 func (UnimplementedAuthServiceServer) ValidateToken(context.Context, *Token) (*TokenData, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateToken not implemented")
 }
-func (UnimplementedAuthServiceServer) AddUser(context.Context, *User) (*ID, error) {
+func (UnimplementedAuthServiceServer) AddUser(context.Context, *AuthServiceUser) (*ID, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddUser not implemented")
 }
 func (UnimplementedAuthServiceServer) RemoveUser(context.Context, *ID) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveUser not implemented")
 }
-func (UnimplementedAuthServiceServer) UpdateUser(context.Context, *User) (*empty.Empty, error) {
+func (UnimplementedAuthServiceServer) UpdateUser(context.Context, *AuthServiceUser) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
@@ -160,7 +160,7 @@ func _AuthService_ValidateToken_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _AuthService_AddUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(AuthServiceUser)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func _AuthService_AddUser_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/AuthService/AddUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).AddUser(ctx, req.(*User))
+		return srv.(AuthServiceServer).AddUser(ctx, req.(*AuthServiceUser))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -196,7 +196,7 @@ func _AuthService_RemoveUser_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _AuthService_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(AuthServiceUser)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func _AuthService_UpdateUser_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: "/AuthService/UpdateUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).UpdateUser(ctx, req.(*User))
+		return srv.(AuthServiceServer).UpdateUser(ctx, req.(*AuthServiceUser))
 	}
 	return interceptor(ctx, in, info, handler)
 }

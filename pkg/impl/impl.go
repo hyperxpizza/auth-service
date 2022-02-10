@@ -123,7 +123,7 @@ func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) 
 	return &tokenData, nil
 }
 
-func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, error) {
+func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUser) (*pb.ID, error) {
 	var id pb.ID
 
 	a.logger.Infof("adding user: %s into the database", user.Username)
@@ -180,7 +180,7 @@ func (a *AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb
 	return &emptypb.Empty{}, nil
 }
 
-func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.User) (*emptypb.Empty, error) {
+func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.AuthServiceUser) (*emptypb.Empty, error) {
 	a.logger.Infof("updating user with id: %d", user.Id)
 
 	mapppedUser := unMapUser(user)

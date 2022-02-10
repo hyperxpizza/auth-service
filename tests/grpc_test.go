@@ -53,7 +53,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func samplePbUser() pb.User {
+func samplePbUser() pb.AuthServiceUser {
 
 	getPwdHash := func(pwd string) string {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pwd), 10)
@@ -64,7 +64,7 @@ func samplePbUser() pb.User {
 		return string(hashedPassword)
 	}
 
-	return pb.User{
+	return pb.AuthServiceUser{
 		Id:           1,
 		Username:     "pizza",
 		PasswordHash: getPwdHash("some-password"),
