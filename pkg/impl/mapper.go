@@ -8,20 +8,22 @@ import (
 
 func unMapUser(user *pb.AuthServiceUser) models.User {
 	return models.User{
-		ID:           user.Id,
-		Username:     user.Username,
-		PasswordHash: user.PasswordHash,
-		Created:      user.Created.AsTime(),
-		Updated:      user.Updated.AsTime(),
+		ID:                    user.Id,
+		Username:              user.Username,
+		PasswordHash:          user.PasswordHash,
+		Created:               user.Created.AsTime(),
+		Updated:               user.Updated.AsTime(),
+		RelatedUsersServiceID: user.RelatedUsersServiceID,
 	}
 }
 
 func mapUser(user models.User) *pb.AuthServiceUser {
 	return &pb.AuthServiceUser{
-		Id:           user.ID,
-		Username:     user.Username,
-		PasswordHash: user.PasswordHash,
-		Created:      timestamppb.New(user.Created),
-		Updated:      timestamppb.New(user.Updated),
+		Id:                    user.ID,
+		Username:              user.Username,
+		PasswordHash:          user.PasswordHash,
+		Created:               timestamppb.New(user.Created),
+		Updated:               timestamppb.New(user.Updated),
+		RelatedUsersServiceID: user.RelatedUsersServiceID,
 	}
 }
