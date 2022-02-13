@@ -69,15 +69,15 @@ func (a *AuthServiceServer) Run() {
 	}
 }
 
-func (a *AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenData) (*pb.Token, error) {
-	a.logger.Infof("generating token for: %s", data.Username)
+func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequest) (*pb.Token, error) {
+	a.logger.Infof("generating token for: %s", req.Username)
 	var tokenResponse pb.Token
 
 	//check if user exists in the database
-	_, err := a.db.GetUser(data.Id, data.Username)
+	user, err := a.db.GetUser(req.UsersServiceID, req.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			a.logger.Infof("user with id: %d and username: %s was not found in the database", data.Id, data.Username)
+			a.logger.Infof("user with id: %d and username: %s was not found in the database", req.UsersServiceID, req.Username)
 			return nil, status.Error(
 				codes.NotFound,
 				UserNotFoundError,
@@ -91,9 +91,9 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenDat
 
 	}
 
-	token, err := a.authenticator.GenerateToken(data.Id, data.Username)
+	token, err := a.authenticator.GenerateToken(user.ID, req.UsersServiceID, req.Username)
 	if err != nil {
-		a.logger.Infof("generating jwt token for: %s with id: %d failed: %s", data.Username, data.Id, err.Error())
+		a.logger.Infof("generating jwt token for: %s with id: %d failed: %s", req.Username, req.UsersServiceID, err.Error())
 		return nil, status.Error(
 			codes.Internal,
 			err.Error(),
@@ -108,7 +108,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, data *pb.TokenDat
 func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (*pb.TokenData, error) {
 	var tokenData pb.TokenData
 
-	username, id, err := a.authenticator.ValidateToken(token.Token)
+	username, authServiceID, usersServiceID, err := a.authenticator.ValidateToken(token.Token)
 	if err != nil {
 		a.logger.Infof("validating jwt token failed: %s", err.Error())
 		return nil, status.Error(
@@ -117,13 +117,14 @@ func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) 
 		)
 	}
 
-	tokenData.Id = id
+	tokenData.AuthServiceID = authServiceID
+	tokenData.UsersServiceID = usersServiceID
 	tokenData.Username = username
 
 	return &tokenData, nil
 }
 
-func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.User) (*pb.ID, error) {
+func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUser) (*pb.ID, error) {
 	var id pb.ID
 
 	a.logger.Infof("adding user: %s into the database", user.Username)
@@ -180,7 +181,7 @@ func (a *AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb
 	return &emptypb.Empty{}, nil
 }
 
-func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.User) (*emptypb.Empty, error) {
+func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.AuthServiceUser) (*emptypb.Empty, error) {
 	a.logger.Infof("updating user with id: %d", user.Id)
 
 	mapppedUser := unMapUser(user)

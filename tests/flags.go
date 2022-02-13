@@ -2,7 +2,8 @@ package main
 
 import "flag"
 
-var idOpt = flag.Int64("id", 0, "id")
+var usersServiceIDOpt = flag.Int64("userID", 1, "users service id")
+var authServiceIDOpt = flag.Int64("authID", 1, "auth service id")
 var usernameOpt = flag.String("username", "", "username")
 var configPathOpt = flag.String("config", "", "path to config file")
 var deleteOpt = flag.Bool("delete", false, "delete user after db operation")

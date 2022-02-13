@@ -28,11 +28,12 @@ func sampleUser() models.User {
 	}
 
 	return models.User{
-		ID:           1,
-		Username:     "pizza",
-		PasswordHash: getPwdHash("some-password"),
-		Created:      time.Now(),
-		Updated:      time.Now(),
+		ID:                    1,
+		Username:              "pizza",
+		PasswordHash:          getPwdHash("some-password"),
+		Created:               time.Now(),
+		Updated:               time.Now(),
+		RelatedUsersServiceID: 1,
 	}
 }
 

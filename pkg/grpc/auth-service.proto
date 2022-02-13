@@ -7,7 +7,13 @@ import "google/protobuf/empty.proto";
 
 message TokenData {
     string username = 1;
-    int64 id = 2;
+    int64 authServiceID = 2;
+    int64 usersServiceID = 3;
+}
+
+message TokenRequest {
+    string username = 1;
+    int64 usersServiceID = 2;
 }
 
 message Token {
@@ -20,6 +26,7 @@ message AuthServiceUser {
     string passwordHash = 3;
     google.protobuf.Timestamp created = 4;
     google.protobuf.Timestamp updated = 5;
+    int64 relatedUsersServiceID = 6;
 }
 
 message ID {
@@ -27,7 +34,7 @@ message ID {
 }
 
 service AuthService {
-    rpc GenerateToken(TokenData) returns (Token) {};
+    rpc GenerateToken(TokenRequest) returns (Token) {};
     rpc ValidateToken(Token) returns (TokenData) {};
 
     rpc AddUser(AuthServiceUser) returns (ID) {};

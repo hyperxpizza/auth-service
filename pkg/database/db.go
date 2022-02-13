@@ -32,12 +32,12 @@ func Connect(cfg *config.Config) (*Database, error) {
 
 func (db *Database) InsertUser(user models.User) (int64, error) {
 	var id int64
-	stmt, err := db.Prepare(`insert into users (id, username, passwordHash, created, updated) values (default, $1, $2, $3, $4) returning id`)
+	stmt, err := db.Prepare(`insert into users (id, username, passwordHash, created, updated, relatedUsersServiceID) values (default, $1, $2, $3, $4, $5) returning id`)
 	if err != nil {
 		return 0, err
 	}
 
-	err = stmt.QueryRow(user.Username, user.PasswordHash, time.Now(), time.Now()).Scan(&id)
+	err = stmt.QueryRow(user.Username, user.PasswordHash, time.Now(), time.Now(), user.RelatedUsersServiceID).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -75,12 +75,13 @@ func (db *Database) UpdateUser(user models.User) error {
 
 func (db *Database) GetUser(id int64, username string) (*models.User, error) {
 	var user models.User
-	err := db.QueryRow(`select * from users where id = $1 and username = $2`, id, username).Scan(
+	err := db.QueryRow(`select * from users where relatedUsersServiceID = $1 and username = $2`, id, username).Scan(
 		&user.ID,
 		&user.Username,
 		&user.PasswordHash,
 		&user.Created,
 		&user.Updated,
+		&user.RelatedUsersServiceID,
 	)
 	if err != nil {
 		return nil, err

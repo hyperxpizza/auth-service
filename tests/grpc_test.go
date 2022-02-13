@@ -53,7 +53,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func samplePbUser() pb.User {
+func samplePbUser() pb.AuthServiceUser {
 
 	getPwdHash := func(pwd string) string {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pwd), 10)
@@ -64,12 +64,13 @@ func samplePbUser() pb.User {
 		return string(hashedPassword)
 	}
 
-	return pb.User{
-		Id:           1,
-		Username:     "pizza",
-		PasswordHash: getPwdHash("some-password"),
-		Created:      timestamppb.Now(),
-		Updated:      timestamppb.Now(),
+	return pb.AuthServiceUser{
+		Id:                    1,
+		Username:              "pizza",
+		PasswordHash:          getPwdHash("some-password"),
+		Created:               timestamppb.Now(),
+		Updated:               timestamppb.Now(),
+		RelatedUsersServiceID: 1,
 	}
 }
 
@@ -102,9 +103,9 @@ func TestGenerateToken(t *testing.T) {
 	id, err := client.AddUser(ctx, &user)
 	assert.NoError(t, err)
 
-	req := pb.TokenData{
-		Id:       id.Id,
-		Username: user.Username,
+	req := pb.TokenRequest{
+		UsersServiceID: id.Id,
+		Username:       user.Username,
 	}
 
 	token, err := client.GenerateToken(ctx, &req)
@@ -113,7 +114,7 @@ func TestGenerateToken(t *testing.T) {
 	data, err := client.ValidateToken(ctx, token)
 	assert.NoError(t, err)
 
-	assert.Equal(t, data.Id, id.Id)
+	assert.Equal(t, data.AuthServiceID, id.Id)
 	assert.Equal(t, data.Username, user.Username)
 
 	if *deleteOpt {
