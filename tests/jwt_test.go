@@ -36,9 +36,10 @@ func TestJWTToken(t *testing.T) {
 	token, err := authenticator.GenerateToken(*authServiceIDOpt, *usersServiceIDOpt, *usernameOpt)
 	assert.NoError(t, err)
 
-	username, id, err := authenticator.ValidateToken(token)
+	username, authServiceID, usersServiceID, err := authenticator.ValidateToken(token)
 	assert.NoError(t, err)
 	assert.Equal(t, *usernameOpt, username)
-	assert.Equal(t, *idOpt, id)
+	assert.Equal(t, *usersServiceIDOpt, usersServiceID)
+	assert.Equal(t, *authServiceIDOpt, authServiceID)
 
 }

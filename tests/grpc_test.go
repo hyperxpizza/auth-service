@@ -104,7 +104,7 @@ func TestGenerateToken(t *testing.T) {
 	assert.NoError(t, err)
 
 	req := pb.TokenRequest{
-		UsersServiceID: id,
+		UsersServiceID: id.Id,
 		Username:       user.Username,
 	}
 
@@ -114,7 +114,7 @@ func TestGenerateToken(t *testing.T) {
 	data, err := client.ValidateToken(ctx, token)
 	assert.NoError(t, err)
 
-	assert.Equal(t, data.Id, id.Id)
+	assert.Equal(t, data.AuthServiceID, id.Id)
 	assert.Equal(t, data.Username, user.Username)
 
 	if *deleteOpt {
