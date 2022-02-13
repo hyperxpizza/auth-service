@@ -65,11 +65,12 @@ func samplePbUser() pb.AuthServiceUser {
 	}
 
 	return pb.AuthServiceUser{
-		Id:           1,
-		Username:     "pizza",
-		PasswordHash: getPwdHash("some-password"),
-		Created:      timestamppb.Now(),
-		Updated:      timestamppb.Now(),
+		Id:                    1,
+		Username:              "pizza",
+		PasswordHash:          getPwdHash("some-password"),
+		Created:               timestamppb.Now(),
+		Updated:               timestamppb.Now(),
+		RelatedUsersServiceID: 1,
 	}
 }
 
@@ -102,9 +103,9 @@ func TestGenerateToken(t *testing.T) {
 	id, err := client.AddUser(ctx, &user)
 	assert.NoError(t, err)
 
-	req := pb.TokenData{
-		Id:       id.Id,
-		Username: user.Username,
+	req := pb.TokenRequest{
+		UsersServiceID: id,
+		Username:       user.Username,
 	}
 
 	token, err := client.GenerateToken(ctx, &req)

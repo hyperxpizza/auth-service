@@ -75,12 +75,13 @@ func (db *Database) UpdateUser(user models.User) error {
 
 func (db *Database) GetUser(id int64, username string) (*models.User, error) {
 	var user models.User
-	err := db.QueryRow(`select * from users where id = $1 and username = $2`, id, username).Scan(
+	err := db.QueryRow(`select * from users where relatedUsersServiceID = $1 and username = $2`, id, username).Scan(
 		&user.ID,
 		&user.Username,
 		&user.PasswordHash,
 		&user.Created,
 		&user.Updated,
+		&user.RelatedUsersServiceID,
 	)
 	if err != nil {
 		return nil, err

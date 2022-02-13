@@ -9,8 +9,9 @@ import (
 )
 
 type Claims struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
+	AuthServiceID  int64  `json:"authServiceID"`
+	UsersServiceID int64  `json:"usersServiceID"`
+	Username       string `json:"username"`
 	jwt.StandardClaims
 }
 
@@ -22,14 +23,14 @@ func NewAuthenticator(c *config.Config) *Authenticator {
 	return &Authenticator{cfg: c}
 }
 
-func (a *Authenticator) GenerateToken(id int64, username string) (string, error) {
-	//var token string
+func (a *Authenticator) GenerateToken(authServiceID, usersServiceID int64, username string) (string, error) {
 
 	expTime := time.Now().Add(time.Hour * time.Duration(a.cfg.AuthService.ExpirationTimeHours))
 
 	claims := Claims{
-		ID:       id,
-		Username: username,
+		AuthServiceID:  authServiceID,
+		UsersServiceID: usersServiceID,
+		Username:       username,
 		StandardClaims: jwt.StandardClaims{
 			Audience:  a.cfg.AuthService.Audience,
 			ExpiresAt: expTime.Unix(),
@@ -47,7 +48,7 @@ func (a *Authenticator) GenerateToken(id int64, username string) (string, error)
 	return tokenString, nil
 }
 
-func (a *Authenticator) ValidateToken(tokenString string) (string, int64, error) {
+func (a *Authenticator) ValidateToken(tokenString string) (username string, authServiceID int64, usersServiceID int64, err error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("token signing method is not valid: %v", token.Header["alg"])
@@ -56,15 +57,20 @@ func (a *Authenticator) ValidateToken(tokenString string) (string, int64, error)
 		return []byte(a.cfg.AuthService.JWTSecret), nil
 	})
 	if err != nil {
-		return "", 0, err
+		return "", 0, 0, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		id := claims["id"]
-		idFloat := id.(float64)
+
+		authSerivceID := claims["authServiceID"]
+		authSerivceIDFloat := authSerivceID.(float64)
+
+		usersServiceID := claims["usersServiceID"]
+		usersServiceIDFloat := usersServiceID.(float64)
+
 		username := claims["username"]
-		return username.(string), int64(idFloat), nil
+		return username.(string), int64(authSerivceIDFloat), int64(usersServiceIDFloat), nil
 	}
 
-	return "", 0, err
+	return "", 0, 0, err
 }

@@ -15,10 +15,6 @@ func TestJWTToken(t *testing.T) {
 	flag.Parse()
 
 	validateFlags := func() error {
-		if *idOpt == 0 {
-			return errors.New("ID flag not set")
-		}
-
 		if *usernameOpt == "" {
 			return errors.New("username flag not set")
 		}
@@ -37,7 +33,7 @@ func TestJWTToken(t *testing.T) {
 	assert.NoError(t, err)
 
 	authenticator := auth.NewAuthenticator(cfg)
-	token, err := authenticator.GenerateToken(*idOpt, *usernameOpt)
+	token, err := authenticator.GenerateToken(*authServiceIDOpt, *usersServiceIDOpt, *usernameOpt)
 	assert.NoError(t, err)
 
 	username, id, err := authenticator.ValidateToken(token)
