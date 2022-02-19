@@ -19,16 +19,15 @@ services:
       context: .
     depends_on:
       - postgres
-    #restart: always
+    restart: always
     ports: 
       - "8886:8886"
     networks:
       - default
-  #nginx:
-  #  build: ./nginx
-  #  ports:
-  #    - "80:80"
-  #  depends_on:
-  #    - authservice
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - 6379:6379
 volumes:
   data:

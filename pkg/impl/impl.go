@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/hyperxpizza/auth-service/pkg/auth"
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/database"
@@ -28,6 +29,7 @@ type AuthServiceServer struct {
 	logger        logrus.FieldLogger
 	authenticator *auth.Authenticator
 	db            *database.Database
+	rdc           redis.Client
 	pb.UnimplementedAuthServiceServer
 }
 
