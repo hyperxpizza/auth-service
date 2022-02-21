@@ -17,7 +17,8 @@ message TokenRequest {
 }
 
 message Token {
-    string token = 1;
+    string accessToken = 1;
+    string refreshToken = 2;
 }
 
 message AuthServiceUser {
@@ -36,6 +37,7 @@ message ID {
 service AuthService {
     rpc GenerateToken(TokenRequest) returns (Token) {};
     rpc ValidateToken(Token) returns (TokenData) {};
+    //rpc RefreshToken
 
     rpc AddUser(AuthServiceUser) returns (ID) {};
     rpc RemoveUser(ID) returns (google.protobuf.Empty) {};

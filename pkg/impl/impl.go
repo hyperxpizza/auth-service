@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/hyperxpizza/auth-service/pkg/auth"
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/database"
@@ -29,7 +28,6 @@ type AuthServiceServer struct {
 	logger        logrus.FieldLogger
 	authenticator *auth.Authenticator
 	db            *database.Database
-	rdc           redis.Client
 	pb.UnimplementedAuthServiceServer
 }
 
@@ -93,7 +91,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 
 	}
 
-	token, err := a.authenticator.GenerateToken(user.ID, req.UsersServiceID, req.Username)
+	token, err := a.authenticator.GenerateTokenPairs(user.ID, req.UsersServiceID, req.Username)
 	if err != nil {
 		a.logger.Infof("generating jwt token for: %s with id: %d failed: %s", req.Username, req.UsersServiceID, err.Error())
 		return nil, status.Error(
