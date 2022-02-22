@@ -91,7 +91,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 
 	}
 
-	token, err := a.authenticator.GenerateTokenPairs(user.ID, req.UsersServiceID, req.Username)
+	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(user.ID, req.UsersServiceID, req.Username)
 	if err != nil {
 		a.logger.Infof("generating jwt token for: %s with id: %d failed: %s", req.Username, req.UsersServiceID, err.Error())
 		return nil, status.Error(
@@ -100,7 +100,8 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 		)
 	}
 
-	tokenResponse.Token = token
+	tokenResponse.RefreshToken = refreshToken
+	tokenResponse.AccessToken = accessToken
 
 	return &tokenResponse, nil
 }

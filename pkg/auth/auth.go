@@ -47,14 +47,14 @@ func NewAuthenticator(c *config.Config) *Authenticator {
 	return &Authenticator{cfg: c, rdc: rdc}
 }
 
-func (a *Authenticator) GenerateTokenPairs(authServiceID, usersServiceID, exp int64, username, issuer string) (string, string, error) {
+func (a *Authenticator) GenerateTokenPairs(authServiceID, usersServiceID int64, username string) (string, string, error) {
 
-	accessToken, accessTokenUID, err := a.generateToken(authServiceID, usersServiceID, exp, username, a.cfg.AuthService.AccessIssuer)
+	accessToken, accessTokenUID, err := a.generateToken(authServiceID, usersServiceID, a.cfg.AuthService.ExpirationTimeAccess, username, a.cfg.AuthService.AccessIssuer)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, refreshTokenUID, err := a.generateToken(authServiceID, usersServiceID, exp, username, a.cfg.AuthService.RefreshIssuer)
+	refreshToken, refreshTokenUID, err := a.generateToken(authServiceID, usersServiceID, a.cfg.AuthService.ExpirationTimeRefresh, username, a.cfg.AuthService.RefreshIssuer)
 	if err != nil {
 		return "", "", err
 	}
