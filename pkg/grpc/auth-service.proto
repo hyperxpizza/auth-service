@@ -16,8 +16,17 @@ message TokenRequest {
     int64 usersServiceID = 2;
 }
 
-message Token {
-    string token = 1;
+message Tokens {
+    string accessToken = 1;
+    string refreshToken = 2;
+}
+
+message RefreshTokenData {
+    string refreshToken = 1;
+}
+
+message AccessTokenData {
+    string accessToken = 1;
 }
 
 message AuthServiceUser {
@@ -34,9 +43,11 @@ message ID {
 }
 
 service AuthService {
-    rpc GenerateToken(TokenRequest) returns (Token) {};
-    rpc ValidateToken(Token) returns (TokenData) {};
-
+    rpc GenerateToken(TokenRequest) returns (Tokens) {};
+    rpc ValidateToken(AccessTokenData) returns (TokenData) {};
+    rpc DeleteTokens(TokenData) returns (google.protobuf.Empty) {};
+    rpc RefreshToken(RefreshTokenData) returns (Tokens) {};
+    
     rpc AddUser(AuthServiceUser) returns (ID) {};
     rpc RemoveUser(ID) returns (google.protobuf.Empty) {};
     rpc UpdateUser(AuthServiceUser) returns (google.protobuf.Empty) {};

@@ -1,76 +1,164 @@
 package auth
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"github.com/hyperxpizza/auth-service/pkg/config"
+)
+
+const (
+	tokenKey               = "token-%d-%d-%s"
+	redisDelError          = "something went wrong"
+	tokenNotFoundError     = "token not found"
+	tokenNotValidError     = "token is not valid"
+	unexpectedSigingMethod = "unexpected token signing method"
 )
 
 type Claims struct {
 	AuthServiceID  int64  `json:"authServiceID"`
 	UsersServiceID int64  `json:"usersServiceID"`
+	Uid            string `json:"uid"`
 	Username       string `json:"username"`
 	jwt.StandardClaims
 }
 
+type CachedTokens struct {
+	AccessUID  string `json:"access"`
+	RefreshUID string `json:"refresh"`
+}
+
 type Authenticator struct {
 	cfg *config.Config
+	rdc *redis.Client
 }
+
+var ctx = context.Background()
 
 func NewAuthenticator(c *config.Config) *Authenticator {
-	return &Authenticator{cfg: c}
+	rdc := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port),
+		Network:  c.Redis.Network,
+		Password: c.Redis.Password,
+		DB:       int(c.Redis.DB),
+	})
+
+	return &Authenticator{cfg: c, rdc: rdc}
 }
 
-func (a *Authenticator) GenerateToken(authServiceID, usersServiceID int64, username string) (string, error) {
+func (a *Authenticator) GenerateTokenPairs(authServiceID, usersServiceID int64, username string) (string, string, error) {
 
-	expTime := time.Now().Add(time.Hour * time.Duration(a.cfg.AuthService.ExpirationTimeHours))
+	accessToken, accessTokenUID, err := a.generateToken(authServiceID, usersServiceID, a.cfg.AuthService.ExpirationTimeAccess, username, a.cfg.AuthService.AccessIssuer)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, refreshTokenUID, err := a.generateToken(authServiceID, usersServiceID, a.cfg.AuthService.ExpirationTimeRefresh, username, a.cfg.AuthService.RefreshIssuer)
+	if err != nil {
+		return "", "", err
+	}
+
+	cacheJSON, err := json.Marshal(CachedTokens{
+		AccessUID:  accessTokenUID,
+		RefreshUID: refreshTokenUID,
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	a.rdc.Set(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), string(cacheJSON), time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff))
+
+	return refreshToken, accessToken, nil
+}
+
+func (a *Authenticator) generateToken(authServiceID, usersServiceID, exp int64, username, issuer string) (string, string, error) {
+
+	expTime := time.Now().Add(time.Hour * time.Duration(exp))
+	uid := uuid.New().String()
 
 	claims := Claims{
 		AuthServiceID:  authServiceID,
 		UsersServiceID: usersServiceID,
 		Username:       username,
+		Uid:            uid,
 		StandardClaims: jwt.StandardClaims{
 			Audience:  a.cfg.AuthService.Audience,
 			ExpiresAt: expTime.Unix(),
 			IssuedAt:  time.Now().Unix(),
-			Issuer:    a.cfg.AuthService.Issuer,
+			Issuer:    issuer,
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(a.cfg.AuthService.JWTSecret))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return tokenString, nil
+	return tokenString, uid, nil
 }
 
-func (a *Authenticator) ValidateToken(tokenString string) (username string, authServiceID int64, usersServiceID int64, err error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("token signing method is not valid: %v", token.Header["alg"])
+func (a *Authenticator) ValidateToken(tokenString string, isRefresh bool) error {
+	claims, err := a.GetClaims(tokenString)
+	if err != nil {
+		return err
+	}
+
+	cacheJSON, err := a.rdc.Get(ctx, fmt.Sprintf(tokenKey, claims.AuthServiceID, claims.UsersServiceID, claims.Username)).Result()
+	if err != nil {
+		return err
+	}
+
+	cachedTokens := new(CachedTokens)
+	err = json.Unmarshal([]byte(cacheJSON), &cachedTokens)
+	if err != nil {
+		return err
+	}
+
+	var tokenUID string
+	if isRefresh {
+		tokenUID = cachedTokens.RefreshUID
+	} else {
+		tokenUID = cachedTokens.AccessUID
+	}
+
+	if tokenUID != claims.Uid {
+		return errors.New(tokenNotFoundError)
+	}
+
+	return nil
+}
+
+func (a *Authenticator) GetClaims(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New(unexpectedSigingMethod)
 		}
 
 		return []byte(a.cfg.AuthService.JWTSecret), nil
 	})
 	if err != nil {
-		return "", 0, 0, err
+		return nil, err
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-
-		authSerivceID := claims["authServiceID"]
-		authSerivceIDFloat := authSerivceID.(float64)
-
-		usersServiceID := claims["usersServiceID"]
-		usersServiceIDFloat := usersServiceID.(float64)
-
-		username := claims["username"]
-		return username.(string), int64(authSerivceIDFloat), int64(usersServiceIDFloat), nil
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
 	}
 
-	return "", 0, 0, err
+	return nil, errors.New(tokenNotValidError)
+}
+
+func (a *Authenticator) DeleteToken(authServiceID, usersServiceID int64, username string) error {
+	intCmd := a.rdc.Del(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username))
+	if intCmd.Val() != 1 {
+		return errors.New(redisDelError)
+	}
+
+	return nil
 }

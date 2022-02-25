@@ -2,19 +2,8 @@ package main
 
 import (
 	"context"
-	"errors"
-	"flag"
-	"net"
-	"testing"
 
-	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
-	"github.com/hyperxpizza/auth-service/pkg/impl"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/bcrypt"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -25,6 +14,7 @@ const (
 var lis *bufconn.Listener
 var ctx = context.Background()
 
+/*
 func mockGrpcServer(configPath string, secure bool) error {
 	lis = bufconn.Listen(buffer)
 	server := grpc.NewServer()
@@ -125,3 +115,4 @@ func TestGenerateToken(t *testing.T) {
 		assert.NoError(t, err)
 	}
 }
+*/

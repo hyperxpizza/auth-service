@@ -8,11 +8,18 @@
     },
     "authService": {
         "jwtSecret": "secretJwtKey",
-        "issuer": "authService",
-        "expirationTimeHours": 24,
+        "accessIssuer": "accessIssuer",
+        "refreshIssuer": "refreshIssuer",
+        "expirationTimeAccesss": 3,
+        "expirationTimeRefresh": 6,
+        "autoLogOff": 1, 
         "audience": "audience",
         "certPath": "",
         "host": "localhost",
         "port": 8886
+    },
+    "redis": {
+        "host": "",
+        "port": ""
     }
 }

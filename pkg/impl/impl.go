@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/hyperxpizza/auth-service/pkg/auth"
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/database"
@@ -29,7 +28,6 @@ type AuthServiceServer struct {
 	logger        logrus.FieldLogger
 	authenticator *auth.Authenticator
 	db            *database.Database
-	rdc           redis.Client
 	pb.UnimplementedAuthServiceServer
 }
 
@@ -71,9 +69,9 @@ func (a *AuthServiceServer) Run() {
 	}
 }
 
-func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequest) (*pb.Token, error) {
+func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequest) (*pb.Tokens, error) {
 	a.logger.Infof("generating token for: %s", req.Username)
-	var tokenResponse pb.Token
+	var tokenResponse pb.Tokens
 
 	//check if user exists in the database
 	user, err := a.db.GetUser(req.UsersServiceID, req.Username)
@@ -93,7 +91,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 
 	}
 
-	token, err := a.authenticator.GenerateToken(user.ID, req.UsersServiceID, req.Username)
+	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(user.ID, req.UsersServiceID, req.Username)
 	if err != nil {
 		a.logger.Infof("generating jwt token for: %s with id: %d failed: %s", req.Username, req.UsersServiceID, err.Error())
 		return nil, status.Error(
@@ -102,28 +100,81 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 		)
 	}
 
-	tokenResponse.Token = token
+	tokenResponse.RefreshToken = refreshToken
+	tokenResponse.AccessToken = accessToken
 
 	return &tokenResponse, nil
 }
 
-func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (*pb.TokenData, error) {
+func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.AccessTokenData) (*pb.TokenData, error) {
 	var tokenData pb.TokenData
 
-	username, authServiceID, usersServiceID, err := a.authenticator.ValidateToken(token.Token)
+	claims, err := a.authenticator.GetClaims(token.AccessToken)
 	if err != nil {
-		a.logger.Infof("validating jwt token failed: %s", err.Error())
 		return nil, status.Error(
-			codes.PermissionDenied,
+			codes.Unauthenticated,
 			err.Error(),
 		)
 	}
 
-	tokenData.AuthServiceID = authServiceID
-	tokenData.UsersServiceID = usersServiceID
-	tokenData.Username = username
+	err = a.authenticator.ValidateToken(token.AccessToken, false)
+	if err != nil {
+		return nil, status.Error(
+			codes.Unauthenticated,
+			err.Error(),
+		)
+	}
+
+	tokenData.Username = claims.Username
+	tokenData.AuthServiceID = claims.AuthServiceID
+	tokenData.UsersServiceID = claims.UsersServiceID
 
 	return &tokenData, nil
+}
+
+func (a *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenData) (*pb.Tokens, error) {
+	var tokens pb.Tokens
+
+	claims, err := a.authenticator.GetClaims(req.RefreshToken)
+	if err != nil {
+		return nil, status.Error(
+			codes.Unauthenticated,
+			err.Error(),
+		)
+	}
+
+	err = a.authenticator.ValidateToken(req.RefreshToken, true)
+	if err != nil {
+		return nil, status.Error(
+			codes.Unauthenticated,
+			err.Error(),
+		)
+	}
+
+	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(claims.AuthServiceID, claims.UsersServiceID, claims.Username)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	tokens.AccessToken = accessToken
+	tokens.RefreshToken = refreshToken
+
+	return &tokens, nil
+}
+
+func (a *AuthServiceServer) DeleteTokens(ctx context.Context, req *pb.TokenData) (*emptypb.Empty, error) {
+	err := a.authenticator.DeleteToken(req.AuthServiceID, req.UsersServiceID, req.Username)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUser) (*pb.ID, error) {

@@ -16,13 +16,23 @@ type Config struct {
 		Host     string `json:"host"`
 	} `json:"database"`
 	AuthService struct {
-		JWTSecret           string `json:"jwtSecret"`
-		Issuer              string `json:"issuer"`
-		ExpirationTimeHours int64  `json:"expirationTimeHours"`
-		Audience            string `json:"audience"`
-		Host                string `json:"host"`
-		Port                int64  `json:"port"`
+		JWTSecret             string `json:"jwtSecret"`
+		AccessIssuer          string `json:"accessIssuer"`
+		RefreshIssuer         string `json:"refreshIssuer"`
+		ExpirationTimeAccess  int64  `json:"expirationTimeAccesss"`
+		ExpirationTimeRefresh int64  `json:"expirationTimeRefresh"`
+		AutoLogoff            int64  `json:"autoLogOff"`
+		Audience              string `json:"audience"`
+		Host                  string `json:"host"`
+		Port                  int64  `json:"port"`
 	} `json:"authService"`
+	Redis struct {
+		Host     string `json:"host"`
+		Port     int64  `json:"port"`
+		Network  string `json:"network"`
+		Password string `json:"password"`
+		DB       int64  `json:"db"`
+	} `json:"redis"`
 }
 
 func NewConfig(pathToFile string) (*Config, error) {
