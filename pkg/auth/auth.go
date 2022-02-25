@@ -162,3 +162,7 @@ func (a *Authenticator) DeleteToken(authServiceID, usersServiceID int64, usernam
 
 	return nil
 }
+
+func (a *Authenticator) ExpireToken(authServiceID, usersServiceID int64, username string) {
+	a.rdc.Expire(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff))
+}

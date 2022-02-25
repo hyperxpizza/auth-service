@@ -129,6 +129,8 @@ func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.AccessT
 	tokenData.AuthServiceID = claims.AuthServiceID
 	tokenData.UsersServiceID = claims.UsersServiceID
 
+	go a.authenticator.ExpireToken(claims.AuthServiceID, claims.UsersServiceID, claims.Username)
+
 	return &tokenData, nil
 }
 
