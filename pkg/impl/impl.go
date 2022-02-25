@@ -69,9 +69,9 @@ func (a *AuthServiceServer) Run() {
 	}
 }
 
-func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequest) (*pb.Token, error) {
+func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequest) (*pb.Tokens, error) {
 	a.logger.Infof("generating token for: %s", req.Username)
-	var tokenResponse pb.Token
+	var tokenResponse pb.Tokens
 
 	//check if user exists in the database
 	user, err := a.db.GetUser(req.UsersServiceID, req.Username)
@@ -106,23 +106,75 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 	return &tokenResponse, nil
 }
 
-func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.Token) (*pb.TokenData, error) {
+func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.AccessTokenData) (*pb.TokenData, error) {
 	var tokenData pb.TokenData
 
-	username, authServiceID, usersServiceID, err := a.authenticator.ValidateToken(token.Token)
+	claims, err := a.authenticator.GetClaims(token.AccessToken)
 	if err != nil {
-		a.logger.Infof("validating jwt token failed: %s", err.Error())
 		return nil, status.Error(
-			codes.PermissionDenied,
+			codes.Unauthenticated,
 			err.Error(),
 		)
 	}
 
-	tokenData.AuthServiceID = authServiceID
-	tokenData.UsersServiceID = usersServiceID
-	tokenData.Username = username
+	err = a.authenticator.ValidateToken(token.AccessToken, false)
+	if err != nil {
+		return nil, status.Error(
+			codes.Unauthenticated,
+			err.Error(),
+		)
+	}
+
+	tokenData.Username = claims.Username
+	tokenData.AuthServiceID = claims.AuthServiceID
+	tokenData.UsersServiceID = claims.UsersServiceID
 
 	return &tokenData, nil
+}
+
+func (a *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenData) (*pb.Tokens, error) {
+	var tokens pb.Tokens
+
+	claims, err := a.authenticator.GetClaims(req.RefreshToken)
+	if err != nil {
+		return nil, status.Error(
+			codes.Unauthenticated,
+			err.Error(),
+		)
+	}
+
+	err = a.authenticator.ValidateToken(req.RefreshToken, true)
+	if err != nil {
+		return nil, status.Error(
+			codes.Unauthenticated,
+			err.Error(),
+		)
+	}
+
+	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(claims.AuthServiceID, claims.UsersServiceID, claims.Username)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	tokens.AccessToken = accessToken
+	tokens.RefreshToken = refreshToken
+
+	return &tokens, nil
+}
+
+func (a *AuthServiceServer) DeleteTokens(ctx context.Context, req *pb.TokenData) (*emptypb.Empty, error) {
+	err := a.authenticator.DeleteToken(req.AuthServiceID, req.UsersServiceID, req.Username)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUser) (*pb.ID, error) {
