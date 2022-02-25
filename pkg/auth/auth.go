@@ -105,7 +105,7 @@ func (a *Authenticator) generateToken(authServiceID, usersServiceID, exp int64, 
 }
 
 func (a *Authenticator) ValidateToken(tokenString string, isRefresh bool) error {
-	claims, err := a.GetClaims(tokenString)
+	claims, err := a.ParseToken(tokenString)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (a *Authenticator) ValidateToken(tokenString string, isRefresh bool) error 
 	return nil
 }
 
-func (a *Authenticator) GetClaims(tokenString string) (*Claims, error) {
+func (a *Authenticator) ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New(unexpectedSigingMethod)

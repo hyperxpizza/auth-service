@@ -109,7 +109,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.AccessTokenData) (*pb.TokenData, error) {
 	var tokenData pb.TokenData
 
-	claims, err := a.authenticator.GetClaims(token.AccessToken)
+	claims, err := a.authenticator.ParseToken(token.AccessToken)
 	if err != nil {
 		return nil, status.Error(
 			codes.Unauthenticated,
@@ -135,7 +135,7 @@ func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.AccessT
 func (a *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenData) (*pb.Tokens, error) {
 	var tokens pb.Tokens
 
-	claims, err := a.authenticator.GetClaims(req.RefreshToken)
+	claims, err := a.authenticator.ParseToken(req.RefreshToken)
 	if err != nil {
 		return nil, status.Error(
 			codes.Unauthenticated,
