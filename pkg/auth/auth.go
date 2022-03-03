@@ -43,10 +43,8 @@ var ctx = context.Background()
 
 func NewAuthenticator(c *config.Config) *Authenticator {
 	rdc := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port),
-		Network:  c.Redis.Network,
-		Password: c.Redis.Password,
-		DB:       int(c.Redis.DB),
+		Addr: fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port),
+		DB:   int(c.Redis.DB),
 	})
 
 	return &Authenticator{cfg: c, rdc: rdc}

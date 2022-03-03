@@ -66,7 +66,7 @@ func samplePbUser() pb.AuthServiceUser {
 
 	return pb.AuthServiceUser{
 		Id:                    1,
-		Username:              "pizza",
+		Username:              "pizza2",
 		PasswordHash:          getPwdHash("some-password"),
 		Created:               timestamppb.Now(),
 		Updated:               timestamppb.Now(),
@@ -74,6 +74,7 @@ func samplePbUser() pb.AuthServiceUser {
 	}
 }
 
+// go test -v ./tests --run TestGenerateToken -config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.json
 func TestGenerateToken(t *testing.T) {
 
 	flag.Parse()
@@ -102,12 +103,37 @@ func TestGenerateToken(t *testing.T) {
 	//insert user into the database
 	id, err := client.AddUser(ctx, &user)
 	assert.NoError(t, err)
+	assert.NotNil(t, id)
 
 	req := pb.TokenRequest{
 		Username:       user.Username,
-		UsersServiceID: id.Id,
+		UsersServiceID: user.RelatedUsersServiceID,
 	}
 
-	_, err = client.GenerateToken(ctx, &req)
+	tokens, err := client.GenerateToken(ctx, &req)
 	assert.NoError(t, err)
+
+	accToken := pb.AccessTokenData{
+		AccessToken: tokens.AccessToken,
+	}
+
+	data, err := client.ValidateToken(ctx, &accToken)
+	assert.NoError(t, err)
+
+	assert.Equal(t, user.Username, data.Username)
+	assert.Equal(t, user.RelatedUsersServiceID, data.UsersServiceID)
+	assert.Equal(t, id.Id, data.AuthServiceID)
+
+	refToken := pb.RefreshTokenData{
+		RefreshToken: tokens.RefreshToken,
+	}
+
+	_, err = client.RefreshToken(ctx, &refToken)
+	assert.NoError(t, err)
+
+	if *deleteOpt {
+		_, err := client.RemoveUser(ctx, id)
+		assert.NoError(t, err)
+	}
+
 }

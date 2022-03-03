@@ -51,7 +51,7 @@ func newDB(cfgpath string) (*database.Database, error) {
 	return db, nil
 }
 
-//go test -v ./tests --run TestInsertUser --config=/home/hyperxpizza/dev/golang/auth-service/config.json --delete=true
+//go test -v ./tests --run TestInsertUser --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.json --delete=true
 func TestInsertUser(t *testing.T) {
 	flag.Parse()
 

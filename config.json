@@ -4,7 +4,7 @@
         "password": "authServiceDBpassword",
         "port": 5432,
         "name": "authServiceDB",
-        "host": "postgres"
+        "host": "localhost"
     },
     "authService": {
         "jwtSecret": "secretJwtKey",
