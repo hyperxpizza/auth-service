@@ -1,41 +1,38 @@
 package main
 
 import (
+	"errors"
+	"flag"
 	"testing"
+
+	"github.com/hyperxpizza/auth-service/pkg/auth"
+	"github.com/hyperxpizza/auth-service/pkg/config"
+	"github.com/stretchr/testify/assert"
 )
 
 //go test -v ./tests/ --run TestJWTToken --id=1 --username=hyperxpizza --config=/home/hyperxpizza/dev/golang/auth-service/config.json
 func TestJWTToken(t *testing.T) {
-	/*
-		flag.Parse()
 
-		validateFlags := func() error {
-			if *usernameOpt == "" {
-				return errors.New("username flag not set")
-			}
+	flag.Parse()
 
-			if *configPathOpt == "" {
-				return errors.New("config path not set")
-			}
-
-			return nil
+	validateFlags := func() error {
+		if *usernameOpt == "" {
+			return errors.New("username flag not set")
 		}
 
-		err := validateFlags()
-		assert.NoError(t, err)
+		if *configPathOpt == "" {
+			return errors.New("config path not set")
+		}
 
-		cfg, err := config.NewConfig(*configPathOpt)
-		assert.NoError(t, err)
+		return nil
+	}
 
-		authenticator := auth.NewAuthenticator(cfg)
-		token, err := authenticator.GenerateToken(*authServiceIDOpt, *usersServiceIDOpt, *usernameOpt)
-		assert.NoError(t, err)
+	err := validateFlags()
+	assert.NoError(t, err)
 
-		username, authServiceID, usersServiceID, err := authenticator.ValidateToken(token)
-		assert.NoError(t, err)
-		assert.Equal(t, *usernameOpt, username)
-		assert.Equal(t, *usersServiceIDOpt, usersServiceID)
-		assert.Equal(t, *authServiceIDOpt, authServiceID)
-	*/
+	cfg, err := config.NewConfig(*configPathOpt)
+	assert.NoError(t, err)
 
+	authenticator := auth.NewAuthenticator(cfg)
+	authenticator.GenerateTokenPairs(1, 1, "username")
 }

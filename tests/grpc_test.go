@@ -2,8 +2,19 @@ package main
 
 import (
 	"context"
+	"errors"
+	"flag"
+	"net"
+	"testing"
 
+	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
+	"github.com/hyperxpizza/auth-service/pkg/impl"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -14,7 +25,6 @@ const (
 var lis *bufconn.Listener
 var ctx = context.Background()
 
-/*
 func mockGrpcServer(configPath string, secure bool) error {
 	lis = bufconn.Listen(buffer)
 	server := grpc.NewServer()
@@ -56,7 +66,7 @@ func samplePbUser() pb.AuthServiceUser {
 
 	return pb.AuthServiceUser{
 		Id:                    1,
-		Username:              "pizza",
+		Username:              "pizza2",
 		PasswordHash:          getPwdHash("some-password"),
 		Created:               timestamppb.Now(),
 		Updated:               timestamppb.Now(),
@@ -64,6 +74,7 @@ func samplePbUser() pb.AuthServiceUser {
 	}
 }
 
+// go test -v ./tests --run TestGenerateToken -config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.json
 func TestGenerateToken(t *testing.T) {
 
 	flag.Parse()
@@ -92,27 +103,37 @@ func TestGenerateToken(t *testing.T) {
 	//insert user into the database
 	id, err := client.AddUser(ctx, &user)
 	assert.NoError(t, err)
+	assert.NotNil(t, id)
 
 	req := pb.TokenRequest{
-		UsersServiceID: id.Id,
 		Username:       user.Username,
+		UsersServiceID: user.RelatedUsersServiceID,
 	}
 
-	token, err := client.GenerateToken(ctx, &req)
+	tokens, err := client.GenerateToken(ctx, &req)
 	assert.NoError(t, err)
 
-	data, err := client.ValidateToken(ctx, token)
+	accToken := pb.AccessTokenData{
+		AccessToken: tokens.AccessToken,
+	}
+
+	data, err := client.ValidateToken(ctx, &accToken)
 	assert.NoError(t, err)
 
-	assert.Equal(t, data.AuthServiceID, id.Id)
-	assert.Equal(t, data.Username, user.Username)
+	assert.Equal(t, user.Username, data.Username)
+	assert.Equal(t, user.RelatedUsersServiceID, data.UsersServiceID)
+	assert.Equal(t, id.Id, data.AuthServiceID)
+
+	refToken := pb.RefreshTokenData{
+		RefreshToken: tokens.RefreshToken,
+	}
+
+	_, err = client.RefreshToken(ctx, &refToken)
+	assert.NoError(t, err)
 
 	if *deleteOpt {
-		req := pb.ID{
-			Id: id.Id,
-		}
-		_, err := client.RemoveUser(ctx, &req)
+		_, err := client.RemoveUser(ctx, id)
 		assert.NoError(t, err)
 	}
+
 }
-*/

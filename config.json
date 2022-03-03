@@ -4,7 +4,7 @@
         "password": "authServiceDBpassword",
         "port": 5432,
         "name": "authServiceDB",
-        "host": "postgres"
+        "host": "localhost"
     },
     "authService": {
         "jwtSecret": "secretJwtKey",
@@ -19,7 +19,10 @@
         "port": 8886
     },
     "redis": {
-        "host": "",
-        "port": ""
+        "host": "localhost",
+        "port": 6379,
+        "network": "",
+        "password": "",
+        "db": 0
     }
 }

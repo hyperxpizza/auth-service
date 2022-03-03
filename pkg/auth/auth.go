@@ -43,10 +43,8 @@ var ctx = context.Background()
 
 func NewAuthenticator(c *config.Config) *Authenticator {
 	rdc := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port),
-		Network:  c.Redis.Network,
-		Password: c.Redis.Password,
-		DB:       int(c.Redis.DB),
+		Addr: fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port),
+		DB:   int(c.Redis.DB),
 	})
 
 	return &Authenticator{cfg: c, rdc: rdc}
@@ -105,7 +103,7 @@ func (a *Authenticator) generateToken(authServiceID, usersServiceID, exp int64, 
 }
 
 func (a *Authenticator) ValidateToken(tokenString string, isRefresh bool) error {
-	claims, err := a.GetClaims(tokenString)
+	claims, err := a.ParseToken(tokenString)
 	if err != nil {
 		return err
 	}
@@ -135,7 +133,7 @@ func (a *Authenticator) ValidateToken(tokenString string, isRefresh bool) error 
 	return nil
 }
 
-func (a *Authenticator) GetClaims(tokenString string) (*Claims, error) {
+func (a *Authenticator) ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New(unexpectedSigingMethod)
@@ -161,4 +159,8 @@ func (a *Authenticator) DeleteToken(authServiceID, usersServiceID int64, usernam
 	}
 
 	return nil
+}
+
+func (a *Authenticator) ExpireToken(authServiceID, usersServiceID int64, username string) {
+	a.rdc.Expire(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff))
 }

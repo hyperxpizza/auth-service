@@ -109,8 +109,9 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.AccessTokenData) (*pb.TokenData, error) {
 	var tokenData pb.TokenData
 
-	claims, err := a.authenticator.GetClaims(token.AccessToken)
+	claims, err := a.authenticator.ParseToken(token.AccessToken)
 	if err != nil {
+		a.logger.Infof("parsing token failed: %s", err.Error())
 		return nil, status.Error(
 			codes.Unauthenticated,
 			err.Error(),
@@ -119,6 +120,7 @@ func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.AccessT
 
 	err = a.authenticator.ValidateToken(token.AccessToken, false)
 	if err != nil {
+		a.logger.Infof("validating token failed: %s", err.Error())
 		return nil, status.Error(
 			codes.Unauthenticated,
 			err.Error(),
@@ -129,14 +131,18 @@ func (a *AuthServiceServer) ValidateToken(ctx context.Context, token *pb.AccessT
 	tokenData.AuthServiceID = claims.AuthServiceID
 	tokenData.UsersServiceID = claims.UsersServiceID
 
+	a.logger.Infof("token for: %s valid", claims.Username)
+	go a.authenticator.ExpireToken(claims.AuthServiceID, claims.UsersServiceID, claims.Username)
+
 	return &tokenData, nil
 }
 
 func (a *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTokenData) (*pb.Tokens, error) {
 	var tokens pb.Tokens
 
-	claims, err := a.authenticator.GetClaims(req.RefreshToken)
+	claims, err := a.authenticator.ParseToken(req.RefreshToken)
 	if err != nil {
+		a.logger.Infof("parsing token failed: %s")
 		return nil, status.Error(
 			codes.Unauthenticated,
 			err.Error(),
@@ -145,6 +151,7 @@ func (a *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTok
 
 	err = a.authenticator.ValidateToken(req.RefreshToken, true)
 	if err != nil {
+		a.logger.Infof("validating token failed: %s", err.Error())
 		return nil, status.Error(
 			codes.Unauthenticated,
 			err.Error(),
@@ -153,6 +160,7 @@ func (a *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTok
 
 	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(claims.AuthServiceID, claims.UsersServiceID, claims.Username)
 	if err != nil {
+		a.logger.Infof("generating jwt token for: %s with id: %d failed: %s", claims.Username, claims.UsersServiceID, err.Error())
 		return nil, status.Error(
 			codes.Internal,
 			err.Error(),
@@ -161,6 +169,7 @@ func (a *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTok
 
 	tokens.AccessToken = accessToken
 	tokens.RefreshToken = refreshToken
+	a.logger.Infof("refreshed token for: %s", claims.Username)
 
 	return &tokens, nil
 }
@@ -168,11 +177,14 @@ func (a *AuthServiceServer) RefreshToken(ctx context.Context, req *pb.RefreshTok
 func (a *AuthServiceServer) DeleteTokens(ctx context.Context, req *pb.TokenData) (*emptypb.Empty, error) {
 	err := a.authenticator.DeleteToken(req.AuthServiceID, req.UsersServiceID, req.Username)
 	if err != nil {
+		a.logger.Infof("deleting token for: %s failed: %s", req.Username, err.Error())
 		return nil, status.Error(
 			codes.Internal,
 			err.Error(),
 		)
 	}
+
+	a.logger.Infof("deleted token for: %s", req.Username)
 
 	return &emptypb.Empty{}, nil
 }
