@@ -103,4 +103,11 @@ func TestGenerateToken(t *testing.T) {
 	id, err := client.AddUser(ctx, &user)
 	assert.NoError(t, err)
 
+	req := pb.TokenRequest{
+		Username:       user.Username,
+		UsersServiceID: id.Id,
+	}
+
+	_, err = client.GenerateToken(ctx, &req)
+	assert.NoError(t, err)
 }

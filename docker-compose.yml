@@ -15,9 +15,9 @@ services:
       - default
   redis:
     image: redis
-    restart: 
+    restart: always
     ports:
-      - 6379:6379
+      - '6379:6379'
     networks:
       - default
   authservice:
