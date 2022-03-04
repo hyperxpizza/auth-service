@@ -19,6 +19,8 @@ const (
 	tokenNotFoundError     = "token not found"
 	tokenNotValidError     = "token is not valid"
 	unexpectedSigingMethod = "unexpected token signing method"
+	redisConnectionError   = "cannot connect to redis"
+	redisPONG              = "PONG"
 )
 
 type Claims struct {
@@ -41,13 +43,24 @@ type Authenticator struct {
 
 var ctx = context.Background()
 
-func NewAuthenticator(c *config.Config) *Authenticator {
+func NewAuthenticator(c *config.Config) (*Authenticator, error) {
 	rdc := redis.NewClient(&redis.Options{
 		Addr: fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port),
 		DB:   int(c.Redis.DB),
 	})
 
-	return &Authenticator{cfg: c, rdc: rdc}
+	stat, err := rdc.Ping(ctx).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(stat)
+
+	if stat != redisPONG {
+		return nil, errors.New(redisConnectionError)
+	}
+
+	return &Authenticator{cfg: c, rdc: rdc}, nil
 }
 
 func (a *Authenticator) GenerateTokenPairs(authServiceID, usersServiceID int64, username string) (string, string, error) {
@@ -77,7 +90,7 @@ func (a *Authenticator) GenerateTokenPairs(authServiceID, usersServiceID int64, 
 
 func (a *Authenticator) generateToken(authServiceID, usersServiceID, exp int64, username, issuer string) (string, string, error) {
 
-	expTime := time.Now().Add(time.Hour * time.Duration(exp))
+	expTime := time.Now().Add(time.Minute * time.Duration(exp))
 	uid := uuid.New().String()
 
 	claims := Claims{

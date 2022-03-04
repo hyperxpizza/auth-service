@@ -42,7 +42,10 @@ func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*Auth
 		return nil, err
 	}
 
-	authenticator := auth.NewAuthenticator(cfg)
+	authenticator, err := auth.NewAuthenticator(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	return &AuthServiceServer{
 		cfg:           cfg,
