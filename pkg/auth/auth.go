@@ -83,7 +83,7 @@ func (a *Authenticator) GenerateTokenPairs(authServiceID, usersServiceID int64, 
 		return "", "", err
 	}
 
-	a.rdc.Set(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), string(cacheJSON), time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff))
+	a.SetTokensInRedis(authServiceID, usersServiceID, username, string(cacheJSON))
 
 	return refreshToken, accessToken, nil
 }
@@ -115,13 +115,26 @@ func (a *Authenticator) generateToken(authServiceID, usersServiceID, exp int64, 
 	return tokenString, uid, nil
 }
 
+func (a *Authenticator) SetTokensInRedis(authServiceID, usersServiceID int64, username, cacheJSON string) {
+	a.rdc.Set(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), cacheJSON, time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff))
+}
+
+func (a *Authenticator) GetTokensFromRedis(authServiceID, usersServiceID int64, username string) (string, error) {
+	cacheJSON, err := a.rdc.Get(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username)).Result()
+	if err != nil {
+		return "", err
+	}
+
+	return cacheJSON, nil
+}
+
 func (a *Authenticator) ValidateToken(tokenString string, isRefresh bool) error {
 	claims, err := a.ParseToken(tokenString)
 	if err != nil {
 		return err
 	}
 
-	cacheJSON, err := a.rdc.Get(ctx, fmt.Sprintf(tokenKey, claims.AuthServiceID, claims.UsersServiceID, claims.Username)).Result()
+	cacheJSON, err := a.GetTokensFromRedis(claims.AuthServiceID, claims.UsersServiceID, claims.Username)
 	if err != nil {
 		return err
 	}
