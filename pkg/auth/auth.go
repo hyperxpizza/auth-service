@@ -14,13 +14,15 @@ import (
 )
 
 const (
-	tokenKey               = "token-%d-%d-%s"
-	redisDelError          = "something went wrong"
-	tokenNotFoundError     = "token not found"
-	tokenNotValidError     = "token is not valid"
-	unexpectedSigingMethod = "unexpected token signing method"
-	redisConnectionError   = "cannot connect to redis"
-	redisPONG              = "PONG"
+	tokenKey                  = "token-%d-%d-%s"
+	redisDelError             = "something went wrong"
+	tokenNotFoundError        = "token not found"
+	tokenNotValidError        = "token is not valid"
+	unexpectedSigingMethod    = "unexpected token signing method"
+	redisConnectionError      = "cannot connect to redis"
+	redisPONG                 = "PONG"
+	redisOK                   = "OK"
+	redisUnknownResponseError = "unknown redis response: %s"
 )
 
 type Claims struct {
@@ -53,8 +55,6 @@ func NewAuthenticator(c *config.Config) (*Authenticator, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(stat)
 
 	if stat != redisPONG {
 		return nil, errors.New(redisConnectionError)
@@ -115,8 +115,17 @@ func (a *Authenticator) generateToken(authServiceID, usersServiceID, exp int64, 
 	return tokenString, uid, nil
 }
 
-func (a *Authenticator) SetTokensInRedis(authServiceID, usersServiceID int64, username, cacheJSON string) {
-	a.rdc.Set(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), cacheJSON, time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff))
+func (a *Authenticator) SetTokensInRedis(authServiceID, usersServiceID int64, username, cacheJSON string) error {
+	res, err := a.rdc.Set(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), cacheJSON, time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff)).Result()
+	if err != nil {
+		return err
+	}
+
+	if res != redisOK {
+		return fmt.Errorf(redisUnknownResponseError, res)
+	}
+
+	return nil
 }
 
 func (a *Authenticator) GetTokensFromRedis(authServiceID, usersServiceID int64, username string) (string, error) {
