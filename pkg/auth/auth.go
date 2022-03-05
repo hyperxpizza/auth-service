@@ -14,11 +14,15 @@ import (
 )
 
 const (
-	tokenKey               = "token-%d-%d-%s"
-	redisDelError          = "something went wrong"
-	tokenNotFoundError     = "token not found"
-	tokenNotValidError     = "token is not valid"
-	unexpectedSigingMethod = "unexpected token signing method"
+	tokenKey                  = "token-%d-%d-%s"
+	redisDelError             = "something went wrong"
+	tokenNotFoundError        = "token not found"
+	tokenNotValidError        = "token is not valid"
+	unexpectedSigingMethod    = "unexpected token signing method"
+	redisConnectionError      = "cannot connect to redis"
+	redisPONG                 = "PONG"
+	redisOK                   = "OK"
+	redisUnknownResponseError = "unknown redis response: %s"
 )
 
 type Claims struct {
@@ -41,13 +45,22 @@ type Authenticator struct {
 
 var ctx = context.Background()
 
-func NewAuthenticator(c *config.Config) *Authenticator {
+func NewAuthenticator(c *config.Config) (*Authenticator, error) {
 	rdc := redis.NewClient(&redis.Options{
 		Addr: fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port),
 		DB:   int(c.Redis.DB),
 	})
 
-	return &Authenticator{cfg: c, rdc: rdc}
+	stat, err := rdc.Ping(ctx).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	if stat != redisPONG {
+		return nil, errors.New(redisConnectionError)
+	}
+
+	return &Authenticator{cfg: c, rdc: rdc}, nil
 }
 
 func (a *Authenticator) GenerateTokenPairs(authServiceID, usersServiceID int64, username string) (string, string, error) {
@@ -70,14 +83,14 @@ func (a *Authenticator) GenerateTokenPairs(authServiceID, usersServiceID int64, 
 		return "", "", err
 	}
 
-	a.rdc.Set(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), string(cacheJSON), time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff))
+	a.SetTokensInRedis(authServiceID, usersServiceID, username, string(cacheJSON))
 
 	return refreshToken, accessToken, nil
 }
 
 func (a *Authenticator) generateToken(authServiceID, usersServiceID, exp int64, username, issuer string) (string, string, error) {
 
-	expTime := time.Now().Add(time.Hour * time.Duration(exp))
+	expTime := time.Now().Add(time.Minute * time.Duration(exp))
 	uid := uuid.New().String()
 
 	claims := Claims{
@@ -102,13 +115,35 @@ func (a *Authenticator) generateToken(authServiceID, usersServiceID, exp int64, 
 	return tokenString, uid, nil
 }
 
+func (a *Authenticator) SetTokensInRedis(authServiceID, usersServiceID int64, username, cacheJSON string) error {
+	res, err := a.rdc.Set(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username), cacheJSON, time.Hour*time.Duration(a.cfg.AuthService.AutoLogoff)).Result()
+	if err != nil {
+		return err
+	}
+
+	if res != redisOK {
+		return fmt.Errorf(redisUnknownResponseError, res)
+	}
+
+	return nil
+}
+
+func (a *Authenticator) GetTokensFromRedis(authServiceID, usersServiceID int64, username string) (string, error) {
+	cacheJSON, err := a.rdc.Get(ctx, fmt.Sprintf(tokenKey, authServiceID, usersServiceID, username)).Result()
+	if err != nil {
+		return "", err
+	}
+
+	return cacheJSON, nil
+}
+
 func (a *Authenticator) ValidateToken(tokenString string, isRefresh bool) error {
 	claims, err := a.ParseToken(tokenString)
 	if err != nil {
 		return err
 	}
 
-	cacheJSON, err := a.rdc.Get(ctx, fmt.Sprintf(tokenKey, claims.AuthServiceID, claims.UsersServiceID, claims.Username)).Result()
+	cacheJSON, err := a.GetTokensFromRedis(claims.AuthServiceID, claims.UsersServiceID, claims.Username)
 	if err != nil {
 		return err
 	}
