@@ -23,8 +23,8 @@ type AuthServiceClient interface {
 	ValidateToken(ctx context.Context, in *AccessTokenData, opts ...grpc.CallOption) (*TokenData, error)
 	DeleteTokens(ctx context.Context, in *TokenData, opts ...grpc.CallOption) (*empty.Empty, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenData, opts ...grpc.CallOption) (*Tokens, error)
-	AddUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*ID, error)
-	RemoveUser(ctx context.Context, in *ID, opts ...grpc.CallOption) (*empty.Empty, error)
+	AddUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*AuthServiceID, error)
+	RemoveUser(ctx context.Context, in *AuthServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
 	UpdateUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
@@ -72,8 +72,8 @@ func (c *authServiceClient) RefreshToken(ctx context.Context, in *RefreshTokenDa
 	return out, nil
 }
 
-func (c *authServiceClient) AddUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*ID, error) {
-	out := new(ID)
+func (c *authServiceClient) AddUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*AuthServiceID, error) {
+	out := new(AuthServiceID)
 	err := c.cc.Invoke(ctx, "/AuthService/AddUser", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (c *authServiceClient) AddUser(ctx context.Context, in *AuthServiceUser, op
 	return out, nil
 }
 
-func (c *authServiceClient) RemoveUser(ctx context.Context, in *ID, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *authServiceClient) RemoveUser(ctx context.Context, in *AuthServiceID, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/AuthService/RemoveUser", in, out, opts...)
 	if err != nil {
@@ -107,8 +107,8 @@ type AuthServiceServer interface {
 	ValidateToken(context.Context, *AccessTokenData) (*TokenData, error)
 	DeleteTokens(context.Context, *TokenData) (*empty.Empty, error)
 	RefreshToken(context.Context, *RefreshTokenData) (*Tokens, error)
-	AddUser(context.Context, *AuthServiceUser) (*ID, error)
-	RemoveUser(context.Context, *ID) (*empty.Empty, error)
+	AddUser(context.Context, *AuthServiceUser) (*AuthServiceID, error)
+	RemoveUser(context.Context, *AuthServiceID) (*empty.Empty, error)
 	UpdateUser(context.Context, *AuthServiceUser) (*empty.Empty, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
@@ -129,10 +129,10 @@ func (UnimplementedAuthServiceServer) DeleteTokens(context.Context, *TokenData) 
 func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *RefreshTokenData) (*Tokens, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
 }
-func (UnimplementedAuthServiceServer) AddUser(context.Context, *AuthServiceUser) (*ID, error) {
+func (UnimplementedAuthServiceServer) AddUser(context.Context, *AuthServiceUser) (*AuthServiceID, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddUser not implemented")
 }
-func (UnimplementedAuthServiceServer) RemoveUser(context.Context, *ID) (*empty.Empty, error) {
+func (UnimplementedAuthServiceServer) RemoveUser(context.Context, *AuthServiceID) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveUser not implemented")
 }
 func (UnimplementedAuthServiceServer) UpdateUser(context.Context, *AuthServiceUser) (*empty.Empty, error) {
@@ -242,7 +242,7 @@ func _AuthService_AddUser_Handler(srv interface{}, ctx context.Context, dec func
 }
 
 func _AuthService_RemoveUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ID)
+	in := new(AuthServiceID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func _AuthService_RemoveUser_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: "/AuthService/RemoveUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).RemoveUser(ctx, req.(*ID))
+		return srv.(AuthServiceServer).RemoveUser(ctx, req.(*AuthServiceID))
 	}
 	return interceptor(ctx, in, info, handler)
 }

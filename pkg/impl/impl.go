@@ -192,8 +192,8 @@ func (a *AuthServiceServer) DeleteTokens(ctx context.Context, req *pb.TokenData)
 	return &emptypb.Empty{}, nil
 }
 
-func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUser) (*pb.ID, error) {
-	var id pb.ID
+func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUser) (*pb.AuthServiceID, error) {
+	var id pb.AuthServiceID
 
 	a.logger.Infof("adding user: %s into the database", user.Username)
 
@@ -223,7 +223,7 @@ func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUse
 	return &id, nil
 }
 
-func (a *AuthServiceServer) RemoveUser(ctx context.Context, id *pb.ID) (*emptypb.Empty, error) {
+func (a *AuthServiceServer) RemoveUser(ctx context.Context, id *pb.AuthServiceID) (*emptypb.Empty, error) {
 
 	a.logger.Infof("deleting user with id: %d", id.Id)
 

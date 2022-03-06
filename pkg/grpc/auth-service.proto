@@ -38,7 +38,7 @@ message AuthServiceUser {
     int64 relatedUsersServiceID = 6;
 }
 
-message ID {
+message AuthServiceID {
     int64 id = 1;
 }
 
@@ -48,7 +48,7 @@ service AuthService {
     rpc DeleteTokens(TokenData) returns (google.protobuf.Empty) {};
     rpc RefreshToken(RefreshTokenData) returns (Tokens) {};
     
-    rpc AddUser(AuthServiceUser) returns (ID) {};
-    rpc RemoveUser(ID) returns (google.protobuf.Empty) {};
+    rpc AddUser(AuthServiceUser) returns (AuthServiceID) {};
+    rpc RemoveUser(AuthServiceID) returns (google.protobuf.Empty) {};
     rpc UpdateUser(AuthServiceUser) returns (google.protobuf.Empty) {};
 }
