@@ -36,6 +36,7 @@ func (db *Database) InsertUser(user models.User) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer stmt.Close()
 
 	err = stmt.QueryRow(user.Username, user.PasswordHash, time.Now(), time.Now(), user.RelatedUsersServiceID).Scan(&id)
 	if err != nil {
@@ -50,6 +51,7 @@ func (db *Database) DeleteUser(id int64) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(id)
 	if err != nil {
@@ -64,6 +66,7 @@ func (db *Database) UpdateUser(user models.User) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(user.Username, user.PasswordHash, time.Now(), user.ID)
 	if err != nil {
