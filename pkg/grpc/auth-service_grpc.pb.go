@@ -26,6 +26,7 @@ type AuthServiceClient interface {
 	AddUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*AuthServiceID, error)
 	RemoveUser(ctx context.Context, in *AuthServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
 	UpdateUser(ctx context.Context, in *AuthServiceUser, opts ...grpc.CallOption) (*empty.Empty, error)
+	ChangePassword(ctx context.Context, in *PasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type authServiceClient struct {
@@ -99,6 +100,15 @@ func (c *authServiceClient) UpdateUser(ctx context.Context, in *AuthServiceUser,
 	return out, nil
 }
 
+func (c *authServiceClient) ChangePassword(ctx context.Context, in *PasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/AuthService/ChangePassword", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
@@ -110,6 +120,7 @@ type AuthServiceServer interface {
 	AddUser(context.Context, *AuthServiceUser) (*AuthServiceID, error)
 	RemoveUser(context.Context, *AuthServiceID) (*empty.Empty, error)
 	UpdateUser(context.Context, *AuthServiceUser) (*empty.Empty, error)
+	ChangePassword(context.Context, *PasswordRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -137,6 +148,9 @@ func (UnimplementedAuthServiceServer) RemoveUser(context.Context, *AuthServiceID
 }
 func (UnimplementedAuthServiceServer) UpdateUser(context.Context, *AuthServiceUser) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
+}
+func (UnimplementedAuthServiceServer) ChangePassword(context.Context, *PasswordRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -277,6 +291,24 @@ func _AuthService_UpdateUser_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/AuthService/ChangePassword",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ChangePassword(ctx, req.(*PasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -311,6 +343,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateUser",
 			Handler:    _AuthService_UpdateUser_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _AuthService_ChangePassword_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

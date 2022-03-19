@@ -38,6 +38,11 @@ message AuthServiceUser {
     int64 relatedUsersServiceID = 6;
 }
 
+message PasswordRequest{
+    string password1 = 1;
+    string password2 = 2;
+}
+
 message AuthServiceID {
     int64 id = 1;
 }
@@ -51,4 +56,5 @@ service AuthService {
     rpc AddUser(AuthServiceUser) returns (AuthServiceID) {};
     rpc RemoveUser(AuthServiceID) returns (google.protobuf.Empty) {};
     rpc UpdateUser(AuthServiceUser) returns (google.protobuf.Empty) {};
+    rpc ChangePassword(PasswordRequest) returns (google.protobuf.Empty) {};
 }
