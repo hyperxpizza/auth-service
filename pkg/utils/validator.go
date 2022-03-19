@@ -45,13 +45,13 @@ func ValidatePassword(pwd1, pwd2 string) error {
 	if ok, err := regexp.MatchString(num, pwd1); !ok || err != nil {
 		return errors.New(passwordNeedsAtLeastOneNumError)
 	}
-	if b, err := regexp.MatchString(az, pwd1); !b || err != nil {
+	if ok, err := regexp.MatchString(az, pwd1); !ok || err != nil {
 		return errors.New(passwordNeedsAtLeastOneSmallCharError)
 	}
-	if b, err := regexp.MatchString(AZ, pwd1); !b || err != nil {
+	if ok, err := regexp.MatchString(AZ, pwd1); !ok || err != nil {
 		return errors.New(passwordNeedsAtLeastOneUpperCaseCharError)
 	}
-	if b, err := regexp.MatchString(symbol, pwd1); !b || err != nil {
+	if ok, err := regexp.MatchString(symbol, pwd1); !ok || err != nil {
 		return errors.New(passwordNeedsAtLeastOneSpecialCaseCharError)
 	}
 
