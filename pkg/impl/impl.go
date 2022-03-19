@@ -11,7 +11,7 @@ import (
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/database"
 	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
-	"github.com/hyperxpizza/auth-service/pkg/validator"
+	"github.com/hyperxpizza/auth-service/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	UserNotFoundError = "User not found in the database"
+	UserNotFoundError         = "user not found in the database"
+	PasswordsNotMatchingError = "passwords do not match"
 )
 
 type AuthServiceServer struct {
@@ -192,20 +193,12 @@ func (a *AuthServiceServer) DeleteTokens(ctx context.Context, req *pb.TokenData)
 	return &emptypb.Empty{}, nil
 }
 
-func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUser) (*pb.AuthServiceID, error) {
+func (a *AuthServiceServer) AddUser(ctx context.Context, req *pb.InsertAuthServiceUserRequest) (*pb.AuthServiceID, error) {
 	var id pb.AuthServiceID
 
-	a.logger.Infof("adding user: %s into the database", user.Username)
+	a.logger.Infof("adding user: %s into the database", req.Username)
 
-	unmappedUser := unMapUser(user)
-	err := validator.ValidateUser(unmappedUser)
-	if err != nil {
-		a.logger.Infof("user: %s is not valid: %s", user.Username, err.Error())
-		return nil, status.Error(
-			codes.InvalidArgument,
-			err.Error(),
-		)
-	}
+	passwordHash := utils.GeneratePasswordHash()
 
 	idInt, err := a.db.InsertUser(unmappedUser)
 	if err != nil {
@@ -272,4 +265,40 @@ func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.AuthService
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (a *AuthServiceServer) ChangePassword(ctx context.Context, req *pb.PasswordRequest) (*emptypb.Empty, error) {
+
+	if req.Password1 != req.Password2 {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			PasswordsNotMatchingError,
+		)
+	}
+
+	passwordHash, err := utils.GeneratePasswordHash(req.Password1)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	err = a.db.ChangePassword(req.AuthServiceID, req.Username, passwordHash)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Error(
+				codes.NotFound,
+				UserNotFoundError,
+			)
+		} else {
+			return nil, status.Error(
+				codes.Internal,
+				err.Error(),
+			)
+		}
+	}
+
+	return &emptypb.Empty{}, nil
+
 }

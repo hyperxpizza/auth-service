@@ -41,10 +41,21 @@ message AuthServiceUser {
 message PasswordRequest{
     string password1 = 1;
     string password2 = 2;
+    string username = 3;
+    int64 authServiceID = 4;
 }
 
 message AuthServiceID {
     int64 id = 1;
+}
+
+message InsertAuthServiceUserRequest {
+    string username = 1;
+    string password1 = 2;
+    string password2 = 3;
+    google.protobuf.Timestamp created = 4;
+    google.protobuf.Timestamp updated = 5;
+    int64 relatedUsersServiceID = 6;
 }
 
 service AuthService {

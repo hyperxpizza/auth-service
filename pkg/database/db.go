@@ -92,3 +92,18 @@ func (db *Database) GetUser(id int64, username string) (*models.User, error) {
 
 	return &user, nil
 }
+
+func (db *Database) ChangePassword(id int64, username, passwordHash string) error {
+	stmt, err := db.Prepare(`update users set passwordHash=$1, updated=$2 where id=$3 and username=$4`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(passwordHash, time.Now(), id, username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
