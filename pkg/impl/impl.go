@@ -198,9 +198,23 @@ func (a *AuthServiceServer) AddUser(ctx context.Context, req *pb.InsertAuthServi
 
 	a.logger.Infof("adding user: %s into the database", req.Username)
 
-	passwordHash := utils.GeneratePasswordHash()
+	err := utils.ValidateRegisterUser(req)
+	if err != nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			err.Error(),
+		)
+	}
 
-	idInt, err := a.db.InsertUser(unmappedUser)
+	passwordHash, err := utils.GeneratePasswordHash(req.Password1)
+
+	user := pb.AuthServiceUser{
+		Username:              req.Username,
+		PasswordHash:          passwordHash,
+		RelatedUsersServiceID: req.RelatedUsersServiceID,
+	}
+
+	idInt, err := a.db.InsertUser(&user)
 	if err != nil {
 		a.logger.Infof("inserting user: %s into the database failed: %s", user.Username, err.Error())
 		return nil, status.Error(
@@ -244,8 +258,6 @@ func (a *AuthServiceServer) RemoveUser(ctx context.Context, id *pb.AuthServiceID
 
 func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.AuthServiceUser) (*emptypb.Empty, error) {
 	a.logger.Infof("updating user with id: %d", user.Id)
-
-	mapppedUser := unMapUser(user)
 
 	err := a.db.UpdateUser(mapppedUser)
 	if err != nil {

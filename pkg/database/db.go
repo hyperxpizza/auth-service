@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/hyperxpizza/auth-service/pkg/config"
-	"github.com/hyperxpizza/auth-service/pkg/models"
+	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
 	_ "github.com/lib/pq"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Database struct {
@@ -30,7 +31,7 @@ func Connect(cfg *config.Config) (*Database, error) {
 	return &Database{database}, nil
 }
 
-func (db *Database) InsertUser(user models.User) (int64, error) {
+func (db *Database) InsertUser(user *pb.AuthServiceUser) (int64, error) {
 	var id int64
 	stmt, err := db.Prepare(`insert into users (id, username, passwordHash, created, updated, relatedUsersServiceID) values (default, $1, $2, $3, $4, $5) returning id`)
 	if err != nil {
@@ -61,14 +62,14 @@ func (db *Database) DeleteUser(id int64) error {
 	return nil
 }
 
-func (db *Database) UpdateUser(user models.User) error {
+func (db *Database) UpdateUser(user *pb.AuthServiceUser) error {
 	stmt, err := db.Prepare(`update users set username=$1, passwordHash=$2, updated=$3 where id=$4`)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(user.Username, user.PasswordHash, time.Now(), user.ID)
+	_, err = stmt.Exec(user.Username, user.PasswordHash, time.Now(), user.Id)
 	if err != nil {
 		return err
 	}
@@ -76,19 +77,25 @@ func (db *Database) UpdateUser(user models.User) error {
 	return nil
 }
 
-func (db *Database) GetUser(id int64, username string) (*models.User, error) {
-	var user models.User
+func (db *Database) GetUser(id int64, username string) (*pb.AuthServiceUser, error) {
+	var user pb.AuthServiceUser
+	var created time.Time
+	var updated time.Time
+
 	err := db.QueryRow(`select * from users where relatedUsersServiceID = $1 and username = $2`, id, username).Scan(
-		&user.ID,
+		&user.Id,
 		&user.Username,
 		&user.PasswordHash,
-		&user.Created,
-		&user.Updated,
+		&created,
+		&updated,
 		&user.RelatedUsersServiceID,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	user.Created = timestamppb.New(created)
+	user.Updated = timestamppb.New(updated)
 
 	return &user, nil
 }
