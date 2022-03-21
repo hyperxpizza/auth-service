@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 
-	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -24,14 +23,20 @@ const (
 
 var usernameConventon = regexp.MustCompile(`^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$`).MatchString
 
-func ValidateRegisterUser(user *pb.InsertAuthServiceUserRequest) error {
+type toValidate interface {
+	GetUsername() string
+	GetPassword1() string
+	GetPassword2() string
+}
 
-	if err := ValidatePassword(user.Password1, user.Password2); err != nil {
+func ValidateRegisterUser[V toValidate](user V) error {
+
+	if err := ValidatePassword(user.GetPassword1(), user.GetPassword2()); err != nil {
 		return err
 	}
 
-	if !usernameConventon(user.Username) {
-		return fmt.Errorf(usernameNotValidError, user.Username)
+	if !usernameConventon(user.GetUsername()) {
+		return fmt.Errorf(usernameNotValidError, user.GetUsername())
 	}
 
 	return nil

@@ -95,7 +95,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 
 	}
 
-	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(user.ID, req.UsersServiceID, req.Username)
+	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(user.Id, req.UsersServiceID, req.Username)
 	if err != nil {
 		a.logger.Infof("generating jwt token for: %s with id: %d failed: %s", req.Username, req.UsersServiceID, err.Error())
 		return nil, status.Error(
@@ -193,7 +193,7 @@ func (a *AuthServiceServer) DeleteTokens(ctx context.Context, req *pb.TokenData)
 	return &emptypb.Empty{}, nil
 }
 
-func (a *AuthServiceServer) AddUser(ctx context.Context, req *pb.InsertAuthServiceUserRequest) (*pb.AuthServiceID, error) {
+func (a *AuthServiceServer) AddUser(ctx context.Context, req *pb.AuthServiceUserRequest) (*pb.AuthServiceID, error) {
 	var id pb.AuthServiceID
 
 	a.logger.Infof("adding user: %s into the database", req.Username)
@@ -207,6 +207,12 @@ func (a *AuthServiceServer) AddUser(ctx context.Context, req *pb.InsertAuthServi
 	}
 
 	passwordHash, err := utils.GeneratePasswordHash(req.Password1)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
 
 	user := pb.AuthServiceUser{
 		Username:              req.Username,
@@ -256,10 +262,32 @@ func (a *AuthServiceServer) RemoveUser(ctx context.Context, id *pb.AuthServiceID
 	return &emptypb.Empty{}, nil
 }
 
-func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.AuthServiceUser) (*emptypb.Empty, error) {
-	a.logger.Infof("updating user with id: %d", user.Id)
+func (a *AuthServiceServer) UpdateUser(ctx context.Context, req *pb.UpdateAuthServiceUserRequest) (*emptypb.Empty, error) {
+	a.logger.Infof("updating user with username: %d", req.Username)
 
-	err := a.db.UpdateUser(mapppedUser)
+	err := utils.ValidateRegisterUser(req)
+	if err != nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			err.Error(),
+		)
+	}
+
+	passwordHash, err := utils.GeneratePasswordHash(req.Password1)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	user := pb.AuthServiceUser{
+		Id:           req.Id,
+		Username:     req.Username,
+		PasswordHash: passwordHash,
+	}
+
+	err = a.db.UpdateUser(&user)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			a.logger.Infof("user with id: %d was not found in the database", user.Id)
