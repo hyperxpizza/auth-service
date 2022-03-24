@@ -71,3 +71,7 @@ func GeneratePasswordHash(pwd string) (string, error) {
 
 	return string(hashedPassword), nil
 }
+
+func ComparePasswords(hashedPassword, toCheck string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(toCheck))
+}

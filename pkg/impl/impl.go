@@ -78,7 +78,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 	var tokenResponse pb.Tokens
 
 	//check if user exists in the database
-	user, err := a.db.GetUser(req.UsersServiceID, req.Username)
+	user, err := a.db.GetUserByUsersServiceID(req.UsersServiceID, req.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			a.logger.Infof("user with id: %d and username: %s was not found in the database", req.UsersServiceID, req.Username)

@@ -77,12 +77,35 @@ func (db *Database) UpdateUser(user *pb.AuthServiceUser) error {
 	return nil
 }
 
-func (db *Database) GetUser(id int64, username string) (*pb.AuthServiceUser, error) {
+func (db *Database) GetUserByUsersServiceID(id int64, username string) (*pb.AuthServiceUser, error) {
 	var user pb.AuthServiceUser
 	var created time.Time
 	var updated time.Time
 
 	err := db.QueryRow(`select * from users where relatedUsersServiceID = $1 and username = $2`, id, username).Scan(
+		&user.Id,
+		&user.Username,
+		&user.PasswordHash,
+		&created,
+		&updated,
+		&user.RelatedUsersServiceID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Created = timestamppb.New(created)
+	user.Updated = timestamppb.New(updated)
+
+	return &user, nil
+}
+
+func (db *Database) GetUser(id int64, username string) (*pb.AuthServiceUser, error) {
+	var user pb.AuthServiceUser
+	var created time.Time
+	var updated time.Time
+
+	err := db.QueryRow(`select * from users where id = $1 and username = $2`, id, username).Scan(
 		&user.Id,
 		&user.Username,
 		&user.PasswordHash,
