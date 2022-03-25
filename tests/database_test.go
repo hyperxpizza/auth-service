@@ -5,16 +5,32 @@ import (
 	"flag"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/database"
-	"github.com/hyperxpizza/auth-service/pkg/models"
+	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
+	"github.com/hyperxpizza/auth-service/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func sampleUser() models.User {
+/*
+const (
+	postgresImage = "postgres:alpine"
+)
+
+var bgContext context.Context
+
+func init() {
+	bgContext = context.Background()
+}
+
+func startPostgresContainer() error {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+}
+*/
+func sampleUser() *pb.AuthServiceUser {
 
 	getPwdHash := func(pwd string) string {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pwd), 10)
@@ -27,12 +43,11 @@ func sampleUser() models.User {
 		return string(hashedPassword)
 	}
 
-	return models.User{
-		ID:                    1,
+	return &pb.AuthServiceUser{
 		Username:              "pizza",
 		PasswordHash:          getPwdHash("some-password"),
-		Created:               time.Now(),
-		Updated:               time.Now(),
+		Created:               timestamppb.Now(),
+		Updated:               timestamppb.Now(),
 		RelatedUsersServiceID: 1,
 	}
 }
@@ -51,7 +66,7 @@ func newDB(cfgpath string) (*database.Database, error) {
 	return db, nil
 }
 
-//go test -v ./tests --run TestInsertUser --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.json --delete=true
+//go test -v ./tests --run TestInsertUser --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.dev.json --delete=true
 func TestInsertUser(t *testing.T) {
 	flag.Parse()
 
@@ -84,7 +99,7 @@ func TestInsertUser(t *testing.T) {
 
 }
 
-//go test -v ./tests --run TestGetUser --config=/home/hyperxpizza/dev/golang/auth-service/config.json --delete=true
+//go test -v ./tests --run TestGetUser --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.dev.json --delete=true
 func TestGetUser(t *testing.T) {
 	flag.Parse()
 
@@ -111,7 +126,7 @@ func TestGetUser(t *testing.T) {
 
 	fmt.Printf("inserted id: %d\n", id)
 
-	user2, err := db.GetUser(id, user.Username)
+	user2, err := db.GetUser(user.RelatedUsersServiceID, user.Username)
 	assert.NoError(t, err)
 
 	assert.Equal(t, user.Username, user2.Username)
@@ -124,7 +139,7 @@ func TestGetUser(t *testing.T) {
 
 }
 
-//go test -v ./tests --run TestUpdateUser --config=/home/hyperxpizza/dev/golang/auth-service/config.json --delete=true
+//go test -v ./tests --run TestUpdateUser --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.dev.json --delete=true
 func TestUpdateUser(t *testing.T) {
 	flag.Parse()
 
@@ -152,7 +167,7 @@ func TestUpdateUser(t *testing.T) {
 	fmt.Printf("inserted id: %d\n", id)
 
 	user2 := sampleUser()
-	user2.ID = id
+	user2.Id = id
 	user2.Username = "updatedUsername"
 
 	err = db.UpdateUser(user2)
@@ -168,4 +183,47 @@ func TestUpdateUser(t *testing.T) {
 		fmt.Printf("user with id: %d deleted", id)
 	}
 
+}
+
+//go test -v ./tests --run TestChangePassword --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.dev.json --delete=true
+func TestChangePassword(t *testing.T) {
+	flag.Parse()
+
+	validateFlags := func() error {
+		if *configPathOpt == "" {
+			return errors.New("config path not set")
+		}
+
+		return nil
+	}
+
+	err := validateFlags()
+	assert.NoError(t, err)
+
+	db, err := newDB(*configPathOpt)
+	assert.NoError(t, err)
+
+	defer db.Close()
+
+	user := sampleUser()
+
+	id, err := db.InsertUser(user)
+	assert.NoError(t, err)
+
+	newPwd, err := utils.GeneratePasswordHash("newPassword1#@")
+	assert.NoError(t, err)
+
+	err = db.ChangePassword(id, user.Username, newPwd)
+	assert.NoError(t, err)
+
+	user2, err := db.GetUser(id, user.Username)
+	assert.NoError(t, err)
+
+	assert.Equal(t, newPwd, user2.PasswordHash)
+
+	if *deleteOpt {
+		err = db.DeleteUser(id)
+		assert.NoError(t, err)
+		fmt.Printf("user with id: %d deleted", id)
+	}
 }

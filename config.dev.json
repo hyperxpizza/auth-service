@@ -1,0 +1,28 @@
+{
+    "database": {
+        "user": "authServiceDBuser",
+        "password": "authServiceDBpassword",
+        "port": 5432,
+        "name": "authServiceDB",
+        "host": "127.0.0.1"
+    },
+    "authService": {
+        "jwtSecret": "secretJwtKey",
+        "accessIssuer": "accessIssuer",
+        "refreshIssuer": "refreshIssuer",
+        "expirationTimeAccesss": 3,
+        "expirationTimeRefresh": 6,
+        "autoLogOff": 1, 
+        "audience": "audience",
+        "certPath": "",
+        "host": "localhost",
+        "port": 8886
+    },
+    "redis": {
+        "host": "127.0.0.1",
+        "port": 6379,
+        "network": "",
+        "password": "",
+        "db": 0
+    }
+}

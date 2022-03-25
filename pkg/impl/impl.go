@@ -11,7 +11,7 @@ import (
 	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/database"
 	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
-	"github.com/hyperxpizza/auth-service/pkg/validator"
+	"github.com/hyperxpizza/auth-service/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	UserNotFoundError = "User not found in the database"
+	UserNotFoundError         = "user not found in the database"
+	PasswordsNotMatchingError = "passwords do not match"
 )
 
 type AuthServiceServer struct {
@@ -77,7 +78,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 	var tokenResponse pb.Tokens
 
 	//check if user exists in the database
-	user, err := a.db.GetUser(req.UsersServiceID, req.Username)
+	user, err := a.db.GetUserByUsersServiceID(req.UsersServiceID, req.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			a.logger.Infof("user with id: %d and username: %s was not found in the database", req.UsersServiceID, req.Username)
@@ -94,7 +95,7 @@ func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequ
 
 	}
 
-	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(user.ID, req.UsersServiceID, req.Username)
+	refreshToken, accessToken, err := a.authenticator.GenerateTokenPairs(user.Id, req.UsersServiceID, req.Username)
 	if err != nil {
 		a.logger.Infof("generating jwt token for: %s with id: %d failed: %s", req.Username, req.UsersServiceID, err.Error())
 		return nil, status.Error(
@@ -192,22 +193,34 @@ func (a *AuthServiceServer) DeleteTokens(ctx context.Context, req *pb.TokenData)
 	return &emptypb.Empty{}, nil
 }
 
-func (a *AuthServiceServer) AddUser(ctx context.Context, user *pb.AuthServiceUser) (*pb.AuthServiceID, error) {
+func (a *AuthServiceServer) AddUser(ctx context.Context, req *pb.AuthServiceUserRequest) (*pb.AuthServiceID, error) {
 	var id pb.AuthServiceID
 
-	a.logger.Infof("adding user: %s into the database", user.Username)
+	a.logger.Infof("adding user: %s into the database", req.Username)
 
-	unmappedUser := unMapUser(user)
-	err := validator.ValidateUser(unmappedUser)
+	err := utils.ValidateRegisterUser(req)
 	if err != nil {
-		a.logger.Infof("user: %s is not valid: %s", user.Username, err.Error())
 		return nil, status.Error(
 			codes.InvalidArgument,
 			err.Error(),
 		)
 	}
 
-	idInt, err := a.db.InsertUser(unmappedUser)
+	passwordHash, err := utils.GeneratePasswordHash(req.Password1)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	user := pb.AuthServiceUser{
+		Username:              req.Username,
+		PasswordHash:          passwordHash,
+		RelatedUsersServiceID: req.RelatedUsersServiceID,
+	}
+
+	idInt, err := a.db.InsertUser(&user)
 	if err != nil {
 		a.logger.Infof("inserting user: %s into the database failed: %s", user.Username, err.Error())
 		return nil, status.Error(
@@ -249,12 +262,32 @@ func (a *AuthServiceServer) RemoveUser(ctx context.Context, id *pb.AuthServiceID
 	return &emptypb.Empty{}, nil
 }
 
-func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.AuthServiceUser) (*emptypb.Empty, error) {
-	a.logger.Infof("updating user with id: %d", user.Id)
+func (a *AuthServiceServer) UpdateUser(ctx context.Context, req *pb.UpdateAuthServiceUserRequest) (*emptypb.Empty, error) {
+	a.logger.Infof("updating user with username: %d", req.Username)
 
-	mapppedUser := unMapUser(user)
+	err := utils.ValidateRegisterUser(req)
+	if err != nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			err.Error(),
+		)
+	}
 
-	err := a.db.UpdateUser(mapppedUser)
+	passwordHash, err := utils.GeneratePasswordHash(req.Password1)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	user := pb.AuthServiceUser{
+		Id:           req.Id,
+		Username:     req.Username,
+		PasswordHash: passwordHash,
+	}
+
+	err = a.db.UpdateUser(&user)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			a.logger.Infof("user with id: %d was not found in the database", user.Id)
@@ -272,4 +305,40 @@ func (a *AuthServiceServer) UpdateUser(ctx context.Context, user *pb.AuthService
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (a *AuthServiceServer) ChangePassword(ctx context.Context, req *pb.PasswordRequest) (*emptypb.Empty, error) {
+
+	if req.Password1 != req.Password2 {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			PasswordsNotMatchingError,
+		)
+	}
+
+	passwordHash, err := utils.GeneratePasswordHash(req.Password1)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	err = a.db.ChangePassword(req.AuthServiceID, req.Username, passwordHash)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Error(
+				codes.NotFound,
+				UserNotFoundError,
+			)
+		} else {
+			return nil, status.Error(
+				codes.Internal,
+				err.Error(),
+			)
+		}
+	}
+
+	return &emptypb.Empty{}, nil
+
 }

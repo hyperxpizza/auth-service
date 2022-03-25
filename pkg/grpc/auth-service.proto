@@ -38,8 +38,29 @@ message AuthServiceUser {
     int64 relatedUsersServiceID = 6;
 }
 
+message PasswordRequest{
+    string password1 = 1;
+    string password2 = 2;
+    string username = 3;
+    int64 authServiceID = 4;
+}
+
 message AuthServiceID {
     int64 id = 1;
+}
+
+message AuthServiceUserRequest {
+    string username = 1;
+    string password1 = 2;
+    string password2 = 3;
+    int64 relatedUsersServiceID = 4;
+}
+
+message UpdateAuthServiceUserRequest {
+    int64 id = 1;
+    string username = 2;
+    string password1 = 3;
+    string password2 = 4;
 }
 
 service AuthService {
@@ -48,7 +69,8 @@ service AuthService {
     rpc DeleteTokens(TokenData) returns (google.protobuf.Empty) {};
     rpc RefreshToken(RefreshTokenData) returns (Tokens) {};
     
-    rpc AddUser(AuthServiceUser) returns (AuthServiceID) {};
+    rpc AddUser(AuthServiceUserRequest) returns (AuthServiceID) {};
     rpc RemoveUser(AuthServiceID) returns (google.protobuf.Empty) {};
-    rpc UpdateUser(AuthServiceUser) returns (google.protobuf.Empty) {};
+    rpc UpdateUser(UpdateAuthServiceUserRequest) returns (google.protobuf.Empty) {};
+    rpc ChangePassword(PasswordRequest) returns (google.protobuf.Empty) {};
 }
