@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//go test -v ./tests/ --run TestJWTToken --id=1 --username=hyperxpizza --config=/home/hyperxpizza/dev/golang/auth-service/config.json
+//go test -v ./tests/ --run TestJWTToken --authID=1 --username=hyperxpizza --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.dev.json
 func TestJWTToken(t *testing.T) {
 
 	flag.Parse()
@@ -33,13 +33,12 @@ func TestJWTToken(t *testing.T) {
 
 	cfg, err := config.NewConfig(*configPathOpt)
 	assert.NoError(t, err)
-
 	authenticator, err := auth.NewAuthenticator(cfg)
 	assert.NoError(t, err)
 	authenticator.GenerateTokenPairs(1, 1, *usernameOpt)
 }
 
-// go test -v ./tests --run TestTimeValidation --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.json
+// go test -v ./tests --run TestTimeValidation --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.dev.json
 func TestTimeValidation(t *testing.T) {
 	flag.Parse()
 
@@ -89,7 +88,7 @@ func TestTimeValidation(t *testing.T) {
 	})
 }
 
-//go test -v ./tests --run TestLogout --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.json
+//go test -v ./tests --run TestLogout --config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.dev.json
 func TestLogout(t *testing.T) {
 	flag.Parse()
 

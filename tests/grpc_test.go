@@ -60,7 +60,7 @@ func sampleUserRequest() pb.AuthServiceUserRequest {
 	}
 }
 
-// go test -v ./tests --run TestGenerateToken -config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.json
+// go test -v ./tests --run TestGenerateToken -config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.dev.json
 func TestGenerateToken(t *testing.T) {
 
 	flag.Parse()
