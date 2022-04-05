@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"errors"
+	"flag"
 	"net"
+	"testing"
 
 	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
 	"github.com/hyperxpizza/auth-service/pkg/impl"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -48,11 +52,13 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 }
 
 func sampleUserRequest() pb.AuthServiceUserRequest {
-
-	return pb.AuthServiceUserRequest{}
+	return pb.AuthServiceUserRequest{
+		Username:              "pizza",
+		Password1:             "Password!3",
+		Password2:             "Password!3",
+		RelatedUsersServiceID: 1,
+	}
 }
-
-/*
 
 // go test -v ./tests --run TestGenerateToken -config=/home/hyperxpizza/dev/golang/reusable-microservices/auth-service/config.json
 func TestGenerateToken(t *testing.T) {
@@ -77,6 +83,8 @@ func TestGenerateToken(t *testing.T) {
 	defer connection.Close()
 
 	client := pb.NewAuthServiceClient(connection)
+
+	user := sampleUserRequest()
 
 	//insert user into the database
 	id, err := client.AddUser(ctx, &user)
@@ -115,4 +123,3 @@ func TestGenerateToken(t *testing.T) {
 	}
 
 }
-*/
