@@ -2,6 +2,7 @@ package impl
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -56,21 +58,36 @@ func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*Auth
 	}, nil
 }
 
-func (a *AuthServiceServer) Run() {
-	grpcServer := grpc.NewServer()
+func (a *AuthServiceServer) Run() error {
+
+	cert, err := tls.LoadX509KeyPair(a.cfg.TLS.CertPath, a.cfg.TLS.KeyPath)
+	if err != nil {
+		a.logger.Error("cound not load X509 key pair")
+		return err
+	}
+
+	opts := []grpc.ServerOption{
+		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
+	}
+
+	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterAuthServiceServer(grpcServer, a)
 
 	addr := fmt.Sprintf(":%d", a.cfg.AuthService.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		a.logger.Fatalf("net.Listen failed: %s", err.Error())
+		a.logger.Error("net.Listen failed: %s", err.Error())
+		return err
 	}
 
 	a.logger.Infof("auth service server running on %s:%d", a.cfg.AuthService.Host, a.cfg.AuthService.Port)
 
 	if err := grpcServer.Serve(lis); err != nil {
-		a.logger.Fatalf("failed to serve: %s", err.Error())
+		a.logger.Error("failed to serve: %s", err.Error())
+		return err
 	}
+
+	return nil
 }
 
 func (a *AuthServiceServer) GenerateToken(ctx context.Context, req *pb.TokenRequest) (*pb.Tokens, error) {

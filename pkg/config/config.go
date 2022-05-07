@@ -33,6 +33,10 @@ type Config struct {
 		Password string `json:"password"`
 		DB       int64  `json:"db"`
 	} `json:"redis"`
+	TLS struct {
+		CertPath string `json:"certPath"`
+		KeyPath  string `json:"keyPath"`
+	} `json:"tls"`
 }
 
 func NewConfig(pathToFile string) (*Config, error) {
