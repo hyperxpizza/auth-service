@@ -7,6 +7,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/hyperxpizza/auth-service/pkg/config"
 	pb "github.com/hyperxpizza/auth-service/pkg/grpc"
 	"github.com/hyperxpizza/auth-service/pkg/impl"
 	"github.com/sirupsen/logrus"
@@ -32,7 +33,12 @@ func mockGrpcServer(configPath string, secure bool) error {
 		logger.Level = level
 	}
 
-	authServiceServer, err := impl.NewAuthServiceServer(configPath, logger)
+	cfg, err := config.NewConfig(configPath)
+	if err != nil {
+		return err
+	}
+
+	authServiceServer, err := impl.NewAuthServiceServer(cfg, logger)
 	if err != nil {
 		return err
 	}
