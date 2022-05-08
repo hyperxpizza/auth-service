@@ -34,8 +34,9 @@ type Config struct {
 		DB       int64  `json:"db"`
 	} `json:"redis"`
 	TLS struct {
-		CertPath string `json:"certPath"`
-		KeyPath  string `json:"keyPath"`
+		CertPath   string `json:"certPath"`
+		KeyPath    string `json:"keyPath"`
+		TlsEnabled bool   `json:"tlsEnabled"`
 	} `json:"tls"`
 }
 

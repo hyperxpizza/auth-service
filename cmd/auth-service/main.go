@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 
+	"github.com/hyperxpizza/auth-service/pkg/config"
 	"github.com/hyperxpizza/auth-service/pkg/impl"
 	"github.com/sirupsen/logrus"
 )
@@ -16,17 +17,24 @@ func main() {
 		panic("config flag not set")
 	}
 
+	cfg, err := config.NewConfig(*configPathOpt)
+	if err != nil {
+		panic(err)
+	}
+
 	logger := logrus.New()
 	if level, err := logrus.ParseLevel(*loglevelOpt); err == nil {
 		logger.Level = level
 	}
 
-	authServiceServer, err := impl.NewAuthServiceServer(*configPathOpt, logger)
+	authServiceServer, err := impl.NewAuthServiceServer(cfg, logger)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	authServiceServer.WithTlsEnabled()
+	if cfg.TLS.TlsEnabled {
+		authServiceServer.WithTlsEnabled()
+	}
 
 	if err := authServiceServer.Run(); err != nil {
 		logger.Fatal(err)

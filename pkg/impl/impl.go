@@ -36,11 +36,7 @@ type AuthServiceServer struct {
 	pb.UnimplementedAuthServiceServer
 }
 
-func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*AuthServiceServer, error) {
-	cfg, err := config.NewConfig(pathToConfig)
-	if err != nil {
-		return nil, err
-	}
+func NewAuthServiceServer(cfg *config.Config, logger logrus.FieldLogger) (*AuthServiceServer, error) {
 
 	db, err := database.Connect(cfg)
 	if err != nil {
