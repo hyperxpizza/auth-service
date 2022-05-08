@@ -26,6 +26,8 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	authServiceServer.WithTlsEnabled()
+
 	if err := authServiceServer.Run(); err != nil {
 		logger.Fatal(err)
 	}

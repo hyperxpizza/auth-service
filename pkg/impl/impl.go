@@ -27,6 +27,8 @@ const (
 )
 
 type AuthServiceServer struct {
+	tlsEnabled bool
+
 	cfg           *config.Config
 	logger        logrus.FieldLogger
 	authenticator *auth.Authenticator
@@ -51,6 +53,7 @@ func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*Auth
 	}
 
 	return &AuthServiceServer{
+		tlsEnabled:    false,
 		cfg:           cfg,
 		logger:        logger,
 		db:            db,
@@ -58,16 +61,23 @@ func NewAuthServiceServer(pathToConfig string, logger logrus.FieldLogger) (*Auth
 	}, nil
 }
 
+func (a *AuthServiceServer) WithTlsEnabled() *AuthServiceServer {
+	a.tlsEnabled = true
+	return a
+}
+
 func (a *AuthServiceServer) Run() error {
 
-	cert, err := tls.LoadX509KeyPair(a.cfg.TLS.CertPath, a.cfg.TLS.KeyPath)
-	if err != nil {
-		a.logger.Error("cound not load X509 key pair")
-		return err
-	}
+	opts := []grpc.ServerOption{}
 
-	opts := []grpc.ServerOption{
-		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
+	if a.tlsEnabled {
+		cert, err := tls.LoadX509KeyPair(a.cfg.TLS.CertPath, a.cfg.TLS.KeyPath)
+		if err != nil {
+			a.logger.Error("cound not load X509 key pair")
+			return err
+		}
+
+		opts = append(opts, grpc.Creds(credentials.NewServerTLSFromCert(&cert)))
 	}
 
 	grpcServer := grpc.NewServer(opts...)
