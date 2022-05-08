@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 
 	"github.com/hyperxpizza/auth-service/pkg/impl"
 	"github.com/sirupsen/logrus"
@@ -14,8 +13,7 @@ var loglevelOpt = flag.String("loglevel", "warn", "logger level")
 func main() {
 	flag.Parse()
 	if *configPathOpt == "" {
-		log.Fatal("config flag not set")
-		return
+		panic("config flag not set")
 	}
 
 	logger := logrus.New()
@@ -25,9 +23,12 @@ func main() {
 
 	authServiceServer, err := impl.NewAuthServiceServer(*configPathOpt, logger)
 	if err != nil {
-		log.Fatal(err)
-		return
+		logger.Fatal(err)
 	}
 
-	authServiceServer.Run()
+	authServiceServer.WithTlsEnabled()
+
+	if err := authServiceServer.Run(); err != nil {
+		logger.Fatal(err)
+	}
 }
